@@ -1,0 +1,654 @@
+'use client';
+
+import * as React from 'react';
+import Image from 'next/image';
+import {
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    useReactTable,
+    type ColumnDef,
+    type SortingState,
+    type ColumnFiltersState,
+    type VisibilityState,
+    type Row,
+} from '@tanstack/react-table';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    verticalListSortingStrategy,
+    useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+    MoreHorizontal,
+    Pencil,
+    Trash2,
+    GripVertical,
+    ChevronDown,
+    ExternalLink,
+    Image as ImageIcon,
+} from 'lucide-react';
+import { Card } from '@prisma/client';
+
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { useToast } from '@/hooks/use-toast';
+
+import {
+    deleteCard,
+    toggleCardStatus,
+    reorderCards,
+} from '../actions/card';
+
+import CardFormDialog from './CardFormDialog'; 
+import { useLoadingStore } from '@/stores/useLoadingStore';
+import { ConfirmDialog } from '@/components/ConfirmDialog';
+
+// --- 1. 定義可拖曳的 Row 元件 ---
+const DraggableRow = ({ row }: { row: Row<Card> }) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: row.original.id,
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 1,
+        opacity: isDragging ? 0.8 : 1,
+        position: 'relative' as const,
+    };
+
+    return (
+        <TableRow
+            ref={setNodeRef}
+            style={style}
+            data-state={row.getIsSelected() && 'selected'}
+            className={isDragging ? 'bg-muted' : ''}
+        >
+            {row.getVisibleCells().map((cell) => {
+                const isDragColumn = cell.column.id === 'drag-handle';
+
+                return (
+                    <TableCell
+                        key={cell.id}
+                        className={`py-3 ${
+                            isDragColumn ? 'w-[1%] whitespace-nowrap px-2' : ''
+                        }`}
+                    >
+                        {isDragColumn ? (
+                            <div
+                                {...attributes}
+                                {...listeners}
+                                className="cursor-grab hover:text-primary flex justify-center items-center w-8 h-8 rounded-md hover:bg-accent"
+                            >
+                                {flexRender(
+                                    cell.column.columnDef.cell,
+                                    cell.getContext()
+                                )}
+                            </div>
+                        ) : (
+                            flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext()
+                            )
+                        )}
+                    </TableCell>
+                );
+            })}
+        </TableRow>
+    );
+};
+
+// --- 2. Action Cell 組件 ---
+interface CardActionsCellProps {
+    card: Card;
+    onDeleteClick: (id: string) => void;
+    moduleId: string;
+    moduleTitle?: string;
+}
+
+const CardActionsCell = ({ card, onDeleteClick, moduleId, moduleTitle }: CardActionsCellProps) => {
+    const [showEditDialog, setShowEditDialog] = React.useState(false);
+
+    return (
+        <>
+            <CardFormDialog
+                initialData={card}
+                moduleId={moduleId}
+                moduleTitle={moduleTitle}
+                open={showEditDialog}
+                onOpenChange={setShowEditDialog}
+            />
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>操作</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                        <Pencil className="mr-2 h-4 w-4" /> 編輯
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        className="text-red-600 focus:text-red-600"
+                        onClick={() => onDeleteClick(card.id)}
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" /> 刪除
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </>
+    );
+};
+
+// --- 3. 主組件 ---
+interface CardDataTableProps {
+    data: Card[];
+    moduleId: string;
+    moduleTitle?: string;
+}
+
+export function CardDataTable({ data: initialData, moduleId, moduleTitle }: CardDataTableProps) {
+    const [data, setData] = React.useState(initialData);
+    const { toast } = useToast();
+    const { show, hide } = useLoadingStore();
+
+    // 刪除對話框狀態
+    const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+    const [deleteId, setDeleteId] = React.useState<string | null>(null);
+
+    // --- Table States ---
+    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+    const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+
+    const dndContextId = React.useId();
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    React.useEffect(() => {
+        setData(initialData);
+    }, [initialData]);
+
+    // ✅ 新增：處理網址顯示邏輯
+    const getDisplayUrl = (url: string) => {
+        if (!url) return '';
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        const baseUrl = 'https://dts-iota.vercel.app';
+        const path = url.startsWith('/') ? url : `/${url}`;
+        return `${baseUrl}${path}`;
+    };
+
+    // --- Actions: 切換狀態 ---
+    const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+        setData((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, isActive: !currentStatus } : item
+            )
+        );
+
+        show();
+
+        try {
+            const result = await toggleCardStatus(id, currentStatus);
+
+            if (!result.success) {
+                toast({
+                    variant: 'destructive',
+                    title: '更新失敗',
+                    description: result.error ? '發生錯誤' : undefined,
+                });
+                // 還原
+                setData((prev) =>
+                    prev.map((item) =>
+                        item.id === id ? { ...item, isActive: currentStatus } : item
+                    )
+                );
+            } else {
+                toast({ title: '狀態已更新' });
+            }
+        } catch (error) {
+            console.error(error);
+            setData((prev) =>
+                prev.map((item) =>
+                    item.id === id ? { ...item, isActive: currentStatus } : item
+                )
+            );
+            toast({ variant: 'destructive', title: '發生錯誤' });
+        } finally {
+            hide();
+        }
+    };
+
+    // --- Actions: 刪除流程 ---
+    const handleDeleteClick = (id: string) => {
+        setDeleteId(id);
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteId) return;
+
+        setDeleteDialogOpen(false);
+        show();
+
+        try {
+            const result = await deleteCard(deleteId);
+            if (result.success) {
+                toast({ title: '刪除成功' });
+                setData((prev) => prev.filter((item) => item.id !== deleteId));
+            } else {
+                toast({ variant: 'destructive', title: '刪除失敗' });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ variant: 'destructive', title: '發生錯誤' });
+        } finally {
+            hide();
+            setDeleteId(null);
+        }
+    };
+
+    // --- Actions: 拖曳排序 ---
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = data.findIndex((item) => item.id === active.id);
+        const newIndex = data.findIndex((item) => item.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const newData = arrayMove(data, oldIndex, newIndex);
+            setData(newData);
+
+            if (columnFilters.length === 0) {
+                show();
+                try {
+                    const idList = newData.map((item, index) => ({
+                        id: item.id,
+                        sortOrder: index,
+                    }));
+                    
+                    const result = await reorderCards(idList);
+
+                    if (!result.success) {
+                        toast({
+                            variant: 'destructive',
+                            title: '排序更新失敗',
+                        });
+                        setData(initialData);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    setData(initialData);
+                    toast({ variant: 'destructive', title: '發生錯誤' });
+                } finally {
+                    hide();
+                }
+            }
+        }
+    };
+
+    // --- Columns 定義 ---
+    const columns = React.useMemo<ColumnDef<Card>[]>(
+        () => [
+            {
+                id: 'drag-handle',
+                header: '',
+                size: 40,
+                maxSize: 40,
+                enableHiding: false,
+                cell: () => <GripVertical className="h-5 w-5 text-gray-400" />,
+            },
+            {
+                accessorKey: 'sortOrder',
+                header: '排序',
+                size: 60,
+                cell: ({ row }) => (
+                    <span className="text-muted-foreground font-mono text-base">
+                        #{row.getValue('sortOrder')}
+                    </span>
+                ),
+            },
+            {
+                accessorKey: 'image',
+                header: '圖片',
+                size: 100,
+                cell: ({ row }) => {
+                    const imgUrl = row.getValue('image') as string;
+                    return (
+                        <div className="relative h-16 w-24 overflow-hidden rounded-md border bg-muted">
+                            {imgUrl ? (
+                                <Image
+                                    src={imgUrl}
+                                    alt={row.original.title}
+                                    fill
+                                    className="object-cover"
+                                    sizes="96px"
+                                />
+                            ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'title',
+                header: '卡片標題',
+                size: 300,
+                cell: ({ row }) => {
+                    const rawHref = row.original.href;
+                    // ✅ 使用 getDisplayUrl 處理網址
+                    const displayUrl = getDisplayUrl(rawHref);
+
+                    return (
+                        <div className="flex flex-col gap-1">
+                            <span className="font-medium text-base">
+                                {row.getValue('title')}
+                            </span>
+                            {rawHref && (
+                                <a
+                                    href={displayUrl} // ✅ 使用完整網址
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="flex items-center gap-1 text-xs text-blue-600 hover:underline truncate max-w-[180px]"
+                                    title={displayUrl} // ✅ 滑鼠移上去顯示完整網址
+                                >
+                                    <ExternalLink className="h-3 w-3" />
+                                    {displayUrl}
+                                </a>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'tags',
+                header: '標籤',
+                size: 200,
+                cell: ({ row }) => {
+                    const tags = row.getValue('tags') as string[];
+                    if (!tags || tags.length === 0) return <span className="text-xs text-muted-foreground">-</span>;
+                    
+                    return (
+                        <div className="flex flex-wrap gap-1">
+                            {tags.slice(0, 3).map((tag, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-xs px-1 py-0 h-5">
+                                    {tag}
+                                </Badge>
+                            ))}
+                            {tags.length > 3 && (
+                                <span className="text-xs text-muted-foreground self-center">+{tags.length - 3}</span>
+                            )}
+                        </div>
+                    );
+                },
+            },
+            {
+                accessorKey: 'description',
+                header: '描述',
+                cell: ({ row }) => {
+                    const desc = row.getValue('description') as string | null;
+                    return desc ? (
+                        <span className="text-sm text-muted-foreground block max-w-[200px] truncate">
+                            {desc}
+                        </span>
+                    ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                    );
+                },
+            },
+            {
+                accessorKey: 'isActive',
+                header: '啟用狀態',
+                size: 80,
+                cell: ({ row }) => {
+                    const isActive = row.getValue('isActive') as boolean;
+                    return (
+                        <Switch
+                            checked={isActive}
+                            onCheckedChange={() =>
+                                handleToggleStatus(row.original.id, isActive)
+                            }
+                        />
+                    );
+                },
+            },
+            {
+                id: 'actions',
+                size: 60,
+                enableHiding: false,
+                cell: ({ row }) => (
+                    <CardActionsCell
+                        card={row.original}
+                        moduleId={moduleId}
+                        moduleTitle={moduleTitle}
+                        onDeleteClick={handleDeleteClick}
+                    />
+                ),
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [moduleId, moduleTitle] 
+    );
+
+    const table = useReactTable({
+        data,
+        columns,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        onSortingChange: setSorting,
+        onColumnFiltersChange: setColumnFilters,
+        onColumnVisibilityChange: setColumnVisibility,
+        state: {
+            sorting,
+            columnFilters,
+            columnVisibility,
+        },
+        getRowId: (row) => row.id,
+    });
+
+    return (
+        <div className="space-y-4">
+            {/* 頂部工具列 */}
+            <div className="flex items-center gap-2">
+                <Input
+                    placeholder="搜尋標題..."
+                    value={
+                        (table.getColumn('title')?.getFilterValue() as string) ?? ''
+                    }
+                    onChange={(event) =>
+                        table.getColumn('title')?.setFilterValue(event.target.value)
+                    }
+                    className="max-w-sm"
+                />
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="ml-auto">
+                            欄位顯示 <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        {table
+                            .getAllColumns()
+                            .filter((column) => column.getCanHide())
+                            .map((column) => {
+                                return (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className="capitalize"
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(value) =>
+                                            column.toggleVisibility(!!value)
+                                        }
+                                    >
+                                        {column.id === 'title' ? '標題' : column.id}
+                                    </DropdownMenuCheckboxItem>
+                                );
+                            })}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+
+                <CardFormDialog
+                    moduleId={moduleId}
+                    moduleTitle={moduleTitle} 
+                    trigger={
+                        <Button>
+                            新增卡片
+                        </Button>
+                    }
+                />
+            </div>
+
+            {/* 表格區塊 */}
+            <div className="rounded-md border">
+                <DndContext
+                    id={dndContextId}
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                >
+                    <Table>
+                        <TableHeader>
+                            {table.getHeaderGroups().map((headerGroup) => (
+                                <TableRow key={headerGroup.id}>
+                                    {headerGroup.headers.map((header) => (
+                                        <TableHead
+                                            key={header.id}
+                                            style={{
+                                                width:
+                                                    header.column.getSize() !== 150
+                                                        ? header.column.getSize()
+                                                        : undefined,
+                                            }}
+                                        >
+                                            {header.isPlaceholder
+                                                ? null
+                                                : flexRender(
+                                                      header.column.columnDef.header,
+                                                      header.getContext()
+                                                  )}
+                                        </TableHead>
+                                    ))}
+                                </TableRow>
+                            ))}
+                        </TableHeader>
+                        <TableBody>
+                            <SortableContext
+                                items={table.getRowModel().rows.map((row) => row.original.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                {table.getRowModel().rows?.length ? (
+                                    table.getRowModel().rows.map((row) => (
+                                        <DraggableRow
+                                            key={row.id}
+                                            row={row}
+                                        />
+                                    ))
+                                ) : (
+                                    <TableRow>
+                                        <TableCell
+                                            colSpan={columns.length}
+                                            className="h-24 text-center"
+                                        >
+                                            暫無資料
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </SortableContext>
+                        </TableBody>
+                    </Table>
+                </DndContext>
+            </div>
+
+            {/* 底部：分頁 */}
+            <div className="flex items-center justify-between space-x-2 py-4">
+                <div className="text-sm text-muted-foreground">
+                    總共 {table.getFilteredRowModel().rows.length} 筆資料
+                </div>
+                <div className="space-x-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                    >
+                        上一頁
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                    >
+                        下一頁
+                    </Button>
+                </div>
+            </div>
+
+            <ConfirmDialog 
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+                title="確定要刪除此卡片嗎？"
+                description="刪除後將無法復原，請確認是否繼續。"
+                confirmText="確認刪除"
+                cancelText="取消"
+                variant="destructive"
+                onConfirm={confirmDelete}
+            />
+        </div>
+    );
+}

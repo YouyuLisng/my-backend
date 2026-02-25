@@ -1,0 +1,4 @@
+{
+    "prisma.pinToPrisma6": true,
+    "tailwindCSS.lint.suggestCanonicalClasses": "ignore"
+}

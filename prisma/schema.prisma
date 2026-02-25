@@ -1,0 +1,299 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ----------------------------------------------------------------
+// 🧭 Enum 權限定義
+// ----------------------------------------------------------------
+
+enum Role {
+  DEV      // 開發人員：系統最高權限、帳號管理、架構變更
+  PLANNING // 企劃室：CMS 內容、Banner、文章、行銷活動頁 (NewPage)、SEO/GA 設定
+  PRODUCT  // 產品部：產品資料同步、訂單管理、挪團操作
+}
+
+// ----------------------------------------------------------------
+// 🧩 複合型別 (Types) - 善用 MongoDB 嵌入式結構
+// ----------------------------------------------------------------
+
+/// GA / GTM 埋點設定
+type TrackingConfig {
+  gaEvent     String? @default("ga-click")
+  gaEventName String?
+  gaCategory  String?
+  gaLabel     String?
+}
+
+/// SEO 搜尋引擎優化與社群分享設定
+type SeoConfig {
+  title       String?
+  description String?
+  keywords    String[] @default([])
+  ogTitle     String?
+  ogDescription String?
+  ogImage     String?
+  canonical   String?
+}
+
+/// 行銷頁面產品清單項目
+type ProductItem {
+  type       String   @default("GRUPCD")
+  refCode    String?
+  productIds String[] @default([])
+  sortOrder  Int      @default(0)
+}
+
+// ----------------------------------------------------------------
+// 👤 使用者與認證 (開發人員管理)
+// ----------------------------------------------------------------
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  password      String?
+  emailVerified DateTime?
+  image         String?
+  
+  // 核心權限與部門
+  role          Role      @default(PLANNING)
+
+  accounts      Account[]
+  sessions      Session[]
+  articles      Article[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String  @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.String
+  access_token      String? @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.String
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String   @db.ObjectId
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+model PasswordResetToken {
+  id      String   @id @default(auto()) @map("_id") @db.ObjectId
+  email   String
+  token   String   @unique
+  expires DateTime
+
+  @@unique([email, token])
+}
+
+// ----------------------------------------------------------------
+// 🖼️ CMS 元件 (企劃室管理)
+// ----------------------------------------------------------------
+
+model Menu {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  linkUrl     String?
+  imageUrl    String?
+  order       Int     @default(0)
+  isActive    Boolean @default(true)
+
+  parentId String? @db.ObjectId
+  parent   Menu?   @relation("MenuToSub", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Menu[]  @relation("MenuToSub")
+
+  /// ===== GA / GTM 埋點欄位 =====
+  gaEvent     String? @default("ga-click") // event: 觸發事件類型
+  gaEventName String? // event_name: GA4 事件名稱
+  gaCategory  String? // event_category: 事件類別 (通用 GA)
+  gaLabel     String? // event_label: 事件標籤 (通用 GA)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  imageUrl    String
+  title       String
+  subtitle    String?
+  linkText    String?
+  linkUrl     String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  /// ===== GA / GTM 埋點欄位 =====
+  gaEvent     String? @default("ga-click") // event: 觸發事件類型
+  gaEventName String? // event_name: GA4 事件名稱
+  gaCategory  String? // event_category: 事件類別 (通用 GA)
+  gaLabel     String? // event_label: 事件標籤 (通用 GA)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model HotKeyword {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  linkUrl     String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  /// ===== GA / GTM 埋點欄位 =====
+  gaEvent     String? @default("ga-click") // event: 觸發事件類型
+  gaEventName String? // event_name: GA4 事件名稱
+  gaCategory  String? // event_category: 事件類別 (通用 GA)
+  gaLabel     String? // event_label: 事件標籤 (通用 GA)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Faq {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  question    String 
+  answer      String 
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Module {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String   @unique
+  icon        String?
+  description String?
+  isActive    Boolean  @default(true)
+  
+  cards       Card[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Card {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  image       String
+  href        String
+  price       String?
+  tags        String[] @default([])
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  /// ===== GA / GTM 埋點欄位 =====
+  gaEvent     String? @default("ga-click") // event: 觸發事件類型
+  gaEventName String? // event_name: GA4 事件名稱
+  gaCategory  String? // event_category: 事件類別 (通用 GA)
+  gaLabel     String? // event_label: 事件標籤 (通用 GA)
+
+  moduleId    String   @db.ObjectId
+  module      Module   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Ad {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  image       String
+  href        String
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+
+  /// ===== GA / GTM 埋點欄位 =====
+  gaEvent     String? @default("ga-click") // event: 觸發事件類型
+  gaEventName String? // event_name: GA4 事件名稱
+  gaCategory  String? // event_category: 事件類別 (通用 GA)
+  gaLabel     String? // event_label: 事件標籤 (通用 GA)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Article {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  subtitle    String?
+  content     String?
+  imageUrl    String?
+  tags        String[]
+  slug        String    @unique
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+
+  authorId    String?   @db.ObjectId
+  author      User?     @relation(fields: [authorId], references: [id])
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isPublished])
+}
+
+// ----------------------------------------------------------------
+// 📄 頁面管理 (企劃室管理)
+// ----------------------------------------------------------------
+
+model NewPage {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  slug        String        @unique
+  mode        String        @default("GRUPCD")
+  mainImage   String?
+  mobileImage String?
+  content     String?
+  // 產品關聯
+  products    ProductItem[]
+  // 狀態
+  enabled     Boolean       @default(false)
+  // 核心 SEO 與 GA 追蹤
+  seo         SeoConfig?
+  tracking    TrackingConfig?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("new_pages")
+}
