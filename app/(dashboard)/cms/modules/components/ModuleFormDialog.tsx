@@ -36,7 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { toast } from "sonner" // ✅ 已改用 sonner
+import { toast } from "sonner" 
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 import { cn } from '@/lib/utils';
 
@@ -55,8 +55,6 @@ export default function ModuleFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    // ❌ 移除 const { toast } = useToast(); 
-    
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
     const setIsOpen = setControlledOpen ?? setInternalOpen;

@@ -2,7 +2,7 @@
 
 import React, { useId, useCallback } from 'react';
 import ImageUploader, { ImageItem } from './ImageUploader';
-import { toast } from "sonner" // ✅ 已改用 sonner
+import { toast } from "sonner" 
 import { deleteFromVercelBlob } from '@/lib/deleteFromVercelBlob';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
