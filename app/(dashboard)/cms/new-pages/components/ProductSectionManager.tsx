@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { UseFormReturn, useFieldArray } from 'react-hook-form';
 import { NewPageFormValues } from '@/schemas/newPage';
@@ -80,7 +80,7 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
 
 interface ProductSectionManagerProps {
     form: UseFormReturn<NewPageFormValues>;
-    readOnly?: boolean; // 新增：用於區分企劃部與產品部
+    readOnly?: boolean;
 }
 
 export default function ProductSectionManager({ form, readOnly = false }: ProductSectionManagerProps) {
@@ -92,11 +92,14 @@ export default function ProductSectionManager({ form, readOnly = false }: Produc
     const mode = form.watch('mode');
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    
+    // ✅ 使用 Ref 確保初始化邏輯在嚴格模式下也只執行一次
+    const initialized = useRef(false);
 
-    // ✅ 核心修正：預設有一個區塊
-    // 如果是新頁面且目前沒有任何產品區塊，則自動增加一個預設區塊
+    // ✅ 修正：嚴格檢查長度，且只在首次掛載時執行
     useEffect(() => {
-        if (fields.length === 0) {
+        if (!initialized.current && fields.length === 0) {
+            initialized.current = true;
             append({ 
                 type: 'GRUPCD', 
                 refCode: '推薦行程', 
@@ -118,7 +121,6 @@ export default function ProductSectionManager({ form, readOnly = false }: Produc
                     <h3 className="text-lg font-bold text-slate-800">活動產品區塊管理</h3>
                 </div>
                 
-                {/* ✅ 只有非唯讀（企劃部）可以手動新增多個區塊 */}
                 {!readOnly && (
                     <Button
                         type="button"
@@ -152,7 +154,7 @@ export default function ProductSectionManager({ form, readOnly = false }: Produc
                                         </span>
                                         <Input
                                             {...form.register(`products.${index}.refCode`)}
-                                            disabled={readOnly} // ✅ 產品部不可改標題
+                                            disabled={readOnly}
                                             className={cn(
                                                 "h-9 bg-white border-slate-200 focus:ring-4 focus:ring-blue-50 font-bold text-slate-700",
                                                 readOnly && "bg-transparent border-none shadow-none px-0 h-auto text-lg"
@@ -162,7 +164,6 @@ export default function ProductSectionManager({ form, readOnly = false }: Produc
                                     </div>
                                 </div>
                                 
-                                {/* ✅ 只有非唯讀（企劃部）可以刪除整個區塊 */}
                                 {!readOnly && (
                                     <Button 
                                         type="button"
@@ -194,7 +195,6 @@ export default function ProductSectionManager({ form, readOnly = false }: Produc
                                         />
                                     ))}
 
-                                    {/* 勾選按鈕卡片：始終保留，讓產品部能勾選 */}
                                     <button
                                         type="button"
                                         onClick={() => { 
