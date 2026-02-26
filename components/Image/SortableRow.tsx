@@ -2,12 +2,11 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useState } from 'react';
-import { toast } from "sonner" // ✅ 1. 已改用 sonner
+import { useState, useEffect } from 'react';
+import { toast } from "sonner"
 import PDFViewerFullScreen from '@/components/PDF/PDFViewerFullScreen';
 import { FileSearch, Loader2 } from 'lucide-react';
 import { BsFileEarmarkPdfFill } from 'react-icons/bs';
-// ✅ 引入 Store
 import { useLoadingStore } from '@/stores/useLoadingStore';
 
 interface Props {
@@ -31,6 +30,13 @@ export default function SortableRow({
     onTogglePrimary,
     showPrimaryButton = true,
 }: Props) {
+    // 1. 加入 mounted 狀態以修復 Hydration Mismatch
+    const [mounted, setMounted] = useState(false);
+    
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     const { attributes, listeners, setNodeRef, transform, transition } =
         useSortable({ id });
 
@@ -39,13 +45,11 @@ export default function SortableRow({
         transition,
     };
 
-    // ❌ 移除 const { toast } = useToast(); 
-    
     const { show, hide } = useLoadingStore();
     
     const [preview, setPreview] = useState(false);
-    const [deleting, setDeleting] = useState(false); // 按鈕轉圈狀態
-    const [deleted, setDeleted] = useState(false);   // 刪除成功，觸發淡出動畫
+    const [deleting, setDeleting] = useState(false);
+    const [deleted, setDeleted] = useState(false);
 
     const fileName = decodeURIComponent(
         data.name || data.url.split('/').pop() || ''
@@ -59,7 +63,6 @@ export default function SortableRow({
     const handleDelete = async () => {
         if (deleting || deleted) return;
 
-        // 1. 開啟 Loading (全站 + 局部)
         show();
         setDeleting(true);
 
@@ -75,28 +78,25 @@ export default function SortableRow({
                 throw new Error(err.error || '刪除失敗');
             }
 
-            // 2. API 成功，關閉全站 Loading
             hide();
-
-            // 3. 設定 deleted 狀態，觸發 CSS 動畫
             setDeleted(true);
 
-            // 4. 等待動畫結束後移除資料並提示
             setTimeout(() => {
                 onDelete();
-                // ✅ Sonner 語法
                 toast.success('檔案已刪除');
             }, 300);
 
         } catch (error: any) {
             hide();
             setDeleting(false);
-            // ✅ Sonner 語法
             toast.error('刪除失敗', {
                 description: error.message,
             });
         }
     };
+
+    // 2. 如果尚未掛載，渲染靜態結構，不綁定拖曳屬性，避免 SSR ID 衝突
+    const dragProps = mounted ? { ...attributes, ...listeners } : {};
 
     return (
         <>
@@ -112,8 +112,7 @@ export default function SortableRow({
                 {/* 左側：拖曳 + 預覽 */}
                 <div
                     className="flex items-center gap-3 flex-1 cursor-grab active:cursor-grabbing"
-                    {...attributes}
-                    {...listeners}
+                    {...dragProps} // ✅ 使用掛載後才生成的屬性
                 >
                     {isPDF ? (
                         <div

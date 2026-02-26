@@ -36,7 +36,6 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
     }, [id, mode]);
 
     return (
-        // ✅ 桌面板寬度設定 lg:w-[calc(20%-12.8px)] 以達成每列 5 個 (扣除 gap-4 的間距)
         <div className="group relative flex flex-col bg-white border border-slate-200 p-2 rounded-xl shadow-sm hover:border-blue-300 hover:shadow-md transition-all w-full sm:w-[calc(50%-8px)] md:w-[calc(33.33%-11px)] lg:w-[calc(20%-12.8px)]">
             {/* 移除按鈕 */}
             <button
@@ -47,7 +46,7 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
                 <Trash2 size={14} />
             </button>
 
-            {/* 圖片預覽 - 16:9 比例 */}
+            {/* 圖片預覽 - 16:10 比例 */}
             <div className="relative w-full aspect-[16/10] rounded-lg overflow-hidden border bg-slate-50 flex-shrink-0 mb-2">
                 {loading ? (
                     <div className="flex items-center justify-center h-full bg-slate-50">
@@ -94,6 +93,11 @@ export default function ProductSectionManager({ form }: { form: UseFormReturn<Ne
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
+    // ✅ 取得當前操作區塊的產品清單，用於傳入 SelectorDialog
+    const currentSelectedIds = activeIndex !== null 
+        ? form.watch(`products.${activeIndex}.productIds`) 
+        : [];
+
     return (
         <div className="space-y-6 pb-20">
             <div className="flex justify-between items-center bg-slate-50/80 p-4 rounded-2xl border border-slate-100">
@@ -117,70 +121,88 @@ export default function ProductSectionManager({ form }: { form: UseFormReturn<Ne
             </div>
 
             <div className="space-y-10">
-                {fields.map((field, index) => (
-                    <Card key={field.id} className="border-slate-200 shadow-sm overflow-hidden group/card bg-white border-l-4 border-l-blue-500">
-                        <CardHeader className="bg-slate-50/50 p-4 border-b flex flex-row items-center justify-between space-y-0">
-                            <div className="flex items-center gap-4 flex-1">
-                                <GripVertical className="text-slate-300 cursor-grab active:cursor-grabbing hover:text-slate-500" />
-                                <div className="flex flex-col gap-1 w-full max-w-sm">
-                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">分組標題名稱 (前台顯示)</span>
-                                    <Input
-                                        {...form.register(`products.${index}.refCode`)}
-                                        className="h-9 bg-white border-slate-200 focus:ring-4 focus:ring-blue-50 font-bold text-slate-700"
-                                        placeholder="例如：熱門行程推薦"
-                                    />
-                                </div>
-                            </div>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" 
-                                onClick={() => remove(index)}
-                            >
-                                <Trash2 size={18} />
-                            </Button>
-                        </CardHeader>
+                {fields.map((field, index) => {
+                    // ✅ 監聽該 index 下的產品 ID 陣列
+                    const productIds = form.watch(`products.${index}.productIds`) || [];
 
-                        <CardContent className="p-5">
-                            {/* 產品展示區塊：Flex 佈局配合寬度計算 */}
-                            <div className="flex flex-wrap gap-4">
-                                {form.watch(`products.${index}.productIds`)?.map((pid) => (
-                                    <ProductDetailCard 
-                                        key={pid} 
-                                        id={pid} 
-                                        mode={mode} 
-                                        onRemove={() => {
-                                            const current = form.getValues(`products.${index}.productIds`);
-                                            form.setValue(`products.${index}.productIds`, current.filter((id) => id !== pid), { shouldDirty: true });
-                                        }}
-                                    />
-                                ))}
-
-                                {/* 勾選按鈕卡片：同步 5 欄位佈局 */}
-                                <button
-                                    type="button"
-                                    onClick={() => { setActiveIndex(index); setSelectorOpen(true); }}
-                                    className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 bg-slate-50/30 rounded-xl p-4 min-h-[160px] w-full sm:w-[calc(50%-8px)] md:w-[calc(33.33%-11px)] lg:w-[calc(20%-12.8px)] hover:bg-blue-50/50 hover:border-blue-400 hover:text-blue-600 transition-all group/add text-slate-400"
-                                >
-                                    <div className="bg-white p-3 rounded-full shadow-sm group-hover/add:scale-110 transition-transform">
-                                        <PackageSearch className="size-6 text-blue-500" />
+                    return (
+                        <Card key={field.id} className="border-slate-200 shadow-sm overflow-hidden group/card bg-white border-l-4 border-l-blue-500">
+                            <CardHeader className="bg-slate-50/50 p-4 border-b flex flex-row items-center justify-between space-y-0">
+                                <div className="flex items-center gap-4 flex-1">
+                                    <GripVertical className="text-slate-300 cursor-grab active:cursor-grabbing hover:text-slate-500" />
+                                    <div className="flex flex-col gap-1 w-full max-w-sm">
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">分組標題名稱 (前台顯示)</span>
+                                        <Input
+                                            {...form.register(`products.${index}.refCode`)}
+                                            className="h-9 bg-white border-slate-200 focus:ring-4 focus:ring-blue-50 font-bold text-slate-700"
+                                            placeholder="例如：熱門行程推薦"
+                                        />
                                     </div>
-                                    <span className="text-xs font-bold mt-1">勾選產品</span>
-                                </button>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
+                                </div>
+                                <Button 
+                                    type="button"
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" 
+                                    onClick={() => remove(index)}
+                                >
+                                    <Trash2 size={18} />
+                                </Button>
+                            </CardHeader>
+
+                            <CardContent className="p-5">
+                                <div className="flex flex-wrap gap-4">
+                                    {/* ✅ 渲染產品卡片 */}
+                                    {productIds.map((pid: string) => (
+                                        <ProductDetailCard 
+                                            key={pid} 
+                                            id={pid} 
+                                            mode={mode} 
+                                            onRemove={() => {
+                                                const current = form.getValues(`products.${index}.productIds`);
+                                                form.setValue(
+                                                    `products.${index}.productIds`, 
+                                                    current.filter((id) => id !== pid), 
+                                                    { shouldDirty: true, shouldValidate: true }
+                                                );
+                                            }}
+                                        />
+                                    ))}
+
+                                    {/* 勾選按鈕卡片 */}
+                                    <button
+                                        type="button"
+                                        onClick={() => { 
+                                            setActiveIndex(index); 
+                                            setSelectorOpen(true); 
+                                        }}
+                                        className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 bg-slate-50/30 rounded-xl p-4 min-h-[160px] w-full sm:w-[calc(50%-8px)] md:w-[calc(33.33%-11px)] lg:w-[calc(20%-12.8px)] hover:bg-blue-50/50 hover:border-blue-400 hover:text-blue-600 transition-all group/add text-slate-400"
+                                    >
+                                        <div className="bg-white p-3 rounded-full shadow-sm group-hover/add:scale-110 transition-transform">
+                                            <PackageSearch className="size-6 text-blue-500" />
+                                        </div>
+                                        <span className="text-xs font-bold mt-1">勾選產品</span>
+                                    </button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })}
             </div>
 
             <ProductSelectorDialog
                 open={selectorOpen}
                 onOpenChange={setSelectorOpen}
                 mode={mode}
-                selectedIds={activeIndex !== null ? form.getValues(`products.${activeIndex}.productIds`) : []}
+                // ✅ 傳入當前選中的 ID
+                selectedIds={currentSelectedIds}
                 onConfirm={(newIds: string[]) => {
                     if (activeIndex !== null) {
-                        form.setValue(`products.${activeIndex}.productIds`, newIds, { shouldDirty: true });
+                        // ✅ 更新 React Hook Form 狀態
+                        form.setValue(`products.${activeIndex}.productIds`, newIds, { 
+                            shouldDirty: true, 
+                            shouldValidate: true 
+                        });
                     }
                 }}
             />

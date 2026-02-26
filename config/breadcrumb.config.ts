@@ -6,6 +6,7 @@ export const breadcrumbMap: Record<string, string> = {
     'new-pages': '活動頁面',
     articles: '文章管理',
     settings: '系統設定',
+    create: '新增',
     new: '新增',
     edit: '編輯',
 };

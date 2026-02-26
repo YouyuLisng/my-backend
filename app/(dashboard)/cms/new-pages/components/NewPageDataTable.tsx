@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import {
     flexRender,
     getCoreRowModel,
@@ -38,8 +39,9 @@ import {
     Trash2,
     ExternalLink,
     ChevronDown,
+    Image as ImageIcon,
 } from 'lucide-react';
-import { HotKeyword } from '@prisma/client';
+import { NewPage } from '@prisma/client';
 
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -61,18 +63,16 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { toast } from "sonner" // ✅ 已改用 sonner
+import { toast } from "sonner";
 import {
-    deleteHotKeyword,
-    toggleHotKeywordStatus,
-    reorderHotKeywords,
-} from '../actions/hotKeyword';
-import HotKeywordFormDialog from './HotKeywordFormDialog';
+    deleteNewPage,
+    toggleNewPageStatus,
+} from '../actions/newPage';
 import { useLoadingStore } from '@/stores/useLoadingStore';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
 // --- 1. 定義可拖曳的 Row 元件 ---
-const DraggableRow = ({ row }: { row: Row<HotKeyword> }) => {
+const DraggableRow = ({ row }: { row: Row<NewPage> }) => {
     const {
         attributes,
         listeners,
@@ -134,25 +134,17 @@ const DraggableRow = ({ row }: { row: Row<HotKeyword> }) => {
 };
 
 // --- 2. 獨立出 Action Cell 組件 ---
-interface KeywordActionsCellProps {
-    keyword: HotKeyword;
+interface PageActionsCellProps {
+    page: NewPage;
     onDeleteClick: (id: string) => void;
 }
 
-const KeywordActionsCell = ({
-    keyword,
+const PageActionsCell = ({
+    page,
     onDeleteClick,
-}: KeywordActionsCellProps) => {
-    const [showEditDialog, setShowEditDialog] = React.useState(false);
-
+}: PageActionsCellProps) => {
     return (
         <>
-            <HotKeywordFormDialog
-                initialData={keyword}
-                open={showEditDialog}
-                onOpenChange={setShowEditDialog}
-            />
-
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -162,13 +154,15 @@ const KeywordActionsCell = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>操作</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                        <Pencil className="mr-2 h-4 w-4" /> 編輯
+                    <DropdownMenuItem asChild>
+                        <Link href={`/cms/new-pages/${page.id}`}>
+                            <Pencil className="mr-2 h-4 w-4" /> 編輯
+                        </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                         className="text-red-600 focus:text-red-600"
-                        onClick={() => onDeleteClick(keyword.id)}
+                        onClick={() => onDeleteClick(page.id)}
                     >
                         <Trash2 className="mr-2 h-4 w-4" /> 刪除
                     </DropdownMenuItem>
@@ -179,13 +173,13 @@ const KeywordActionsCell = ({
 };
 
 // --- 3. 主組件 ---
-interface HotKeywordDataTableProps {
-    data: HotKeyword[];
+interface NewPageDataTableProps {
+    data: NewPage[];
 }
 
-export function HotKeywordDataTable({
+export function NewPageDataTable({
     data: initialData,
-}: HotKeywordDataTableProps) {
+}: NewPageDataTableProps) {
     const [data, setData] = React.useState(initialData);
     const { show, hide } = useLoadingStore();
 
@@ -204,46 +198,40 @@ export function HotKeywordDataTable({
         setData(initialData);
     }, [initialData]);
 
-    const getDisplayUrl = (url: string) => {
-        if (!url) return '';
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-            return url;
-        }
-        const baseUrl = 'https://dts-iota.vercel.app';
-        const path = url.startsWith('/') ? url : `/${url}`;
-        return `${baseUrl}${path}`;
+    const getDisplayUrl = (slug: string) => {
+        if (!slug) return '';
+        const baseUrl = 'https://www.dtsgroup.com.tw';
+        return `${baseUrl}/pages/${slug}`;
     };
 
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         setData((prev) =>
             prev.map((item) =>
-                item.id === id ? { ...item, isActive: !currentStatus } : item
+                item.id === id ? { ...item, enabled: !currentStatus } : item
             )
         );
         show();
         try {
-            const result = await toggleHotKeywordStatus(id, currentStatus);
+            const result = await toggleNewPageStatus(id, currentStatus);
             if (!result.success) {
-                // ✅ Sonner 語法
                 toast.error('更新失敗', {
-                    description: result.error,
+                    description: result.message,
                 });
                 setData((prev) =>
                     prev.map((item) =>
                         item.id === id
-                            ? { ...item, isActive: currentStatus }
+                            ? { ...item, enabled: currentStatus }
                             : item
                     )
                 );
             } else {
-                // ✅ Sonner 語法
                 toast.success('狀態已更新');
             }
         } catch (error) {
             console.error(error);
             setData((prev) =>
                 prev.map((item) =>
-                    item.id === id ? { ...item, isActive: currentStatus } : item
+                    item.id === id ? { ...item, enabled: currentStatus } : item
                 )
             );
             toast.error('發生錯誤');
@@ -264,13 +252,11 @@ export function HotKeywordDataTable({
         show();
 
         try {
-            const result = await deleteHotKeyword(deleteId);
+            const result = await deleteNewPage(deleteId);
             if (result.success) {
-                // ✅ Sonner 語法
                 toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                // ✅ Sonner 語法
                 toast.error('刪除失敗');
             }
         } catch (error) {
@@ -299,31 +285,11 @@ export function HotKeywordDataTable({
         if (oldIndex !== -1 && newIndex !== -1) {
             const newData = arrayMove(data, oldIndex, newIndex);
             setData(newData);
-
-            if (columnFilters.length === 0) {
-                show();
-                try {
-                    const idList = newData.map((item, index) => ({
-                        id: item.id,
-                        sortOrder: index,
-                    }));
-                    const result = await reorderHotKeywords(idList);
-                    if (!result.success) {
-                        toast.error('排序更新失敗');
-                        setData(initialData);
-                    }
-                } catch (error) {
-                    console.error(error);
-                    setData(initialData);
-                    toast.error('發生錯誤');
-                } finally {
-                    hide();
-                }
-            }
+            toast.info("排序功能已在前端更新");
         }
     };
 
-    const columns = React.useMemo<ColumnDef<HotKeyword>[]>(
+    const columns = React.useMemo<ColumnDef<NewPage>[]>(
         () => [
             {
                 id: 'drag-handle',
@@ -334,14 +300,27 @@ export function HotKeywordDataTable({
                 cell: () => <GripVertical className="h-5 w-5 text-gray-400" />,
             },
             {
-                accessorKey: 'order',
-                header: '排序',
-                size: 60,
-                cell: ({ row }) => (
-                    <span className="text-muted-foreground font-mono text-base">
-                        #{row.getValue('order')}
-                    </span>
-                ),
+                accessorKey: 'mainImage',
+                header: '主圖',
+                size: 100,
+                cell: ({ row }) => {
+                    const imgUrl = row.getValue('mainImage') as string;
+                    return (
+                        <div className="relative h-12 w-20 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
+                            {imgUrl ? (
+                                <Image
+                                    src={imgUrl}
+                                    alt={row.original.title}
+                                    fill
+                                    className="object-cover"
+                                    sizes="80px"
+                                />
+                            ) : (
+                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                            )}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'title',
@@ -354,18 +333,11 @@ export function HotKeywordDataTable({
                 ),
             },
             {
-                accessorKey: 'linkUrl',
-                header: '連結',
+                accessorKey: 'slug',
+                header: '網址路徑',
                 cell: ({ row }) => {
-                    const rawUrl = row.getValue('linkUrl') as string | null;
-                    if (!rawUrl)
-                        return (
-                            <span className="text-muted-foreground text-xs">
-                                -
-                            </span>
-                        );
-                    
-                    const displayUrl = getDisplayUrl(rawUrl);
+                    const slug = row.getValue('slug') as string;
+                    const displayUrl = getDisplayUrl(slug);
 
                     return (
                         <a
@@ -376,22 +348,22 @@ export function HotKeywordDataTable({
                             title={displayUrl}
                         >
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
-                            <span className="truncate">{displayUrl}</span>
+                            <span className="truncate">/{slug}</span>
                         </a>
                     );
                 },
             },
             {
-                accessorKey: 'isActive',
+                accessorKey: 'enabled',
                 header: '啟用狀態',
                 size: 80,
                 cell: ({ row }) => {
-                    const isActive = row.getValue('isActive') as boolean;
+                    const enabled = row.getValue('enabled') as boolean;
                     return (
                         <Switch
-                            checked={isActive}
+                            checked={enabled}
                             onCheckedChange={() =>
-                                handleToggleStatus(row.original.id, isActive)
+                                handleToggleStatus(row.original.id, enabled)
                             }
                         />
                     );
@@ -402,14 +374,13 @@ export function HotKeywordDataTable({
                 size: 60,
                 enableHiding: false,
                 cell: ({ row }) => (
-                    <KeywordActionsCell
-                        keyword={row.original}
+                    <PageActionsCell
+                        page={row.original}
                         onDeleteClick={handleDeleteClick}
                     />
                 ),
             },
         ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     );
 
@@ -464,14 +435,19 @@ export function HotKeywordDataTable({
                                             column.toggleVisibility(!!value)
                                         }
                                     >
-                                        {column.id === 'title' ? '標題' : column.id}
+                                        {column.id === 'mainImage' ? '主圖' :
+                                         column.id === 'title' ? '標題' : 
+                                         column.id === 'slug' ? '路徑' : 
+                                         column.id === 'enabled' ? '狀態' : column.id}
                                     </DropdownMenuCheckboxItem>
                                 );
                             })}
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <HotKeywordFormDialog trigger={<Button>新增關鍵字</Button>} />
+                <Button asChild>
+                    <Link href="/cms/new-pages/create">新增活動頁</Link>
+                </Button>
             </div>
 
             <div className="rounded-md border">
@@ -560,7 +536,7 @@ export function HotKeywordDataTable({
             <ConfirmDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
-                title="確定要刪除此關鍵字嗎？"
+                title="確定要刪除此活動頁嗎？"
                 description="刪除後將無法復原，請確認是否繼續。"
                 confirmText="確認刪除"
                 cancelText="取消"

@@ -15,7 +15,8 @@ export type ActionState = {
 async function getSessionUser() {
     const session = await auth();
     if (!session?.user) throw new Error("未授權訪問");
-    return session.user;
+    // 💡 確保 auth.ts 裡面有把 role 放入 session
+    return session.user; 
 }
 
 export async function getNewPages() {
@@ -30,17 +31,15 @@ export async function getNewPages() {
     }
 }
 
-/** * ✅ 修正：移除 prevState，改為僅接收 formData 以匹配前端 onSubmit 呼叫
- */
 export async function createNewPage(formData: FormData): Promise<ActionState> {
     try {
         const user = await getSessionUser();
         
-        if (user.role === Role.PRODUCT) {
+        // 🔒 權限防線：產品部禁止建立
+        if (user.role === 'PRODUCT') {
             return { success: false, message: '權限不足：產品部無法建立新活動頁' };
         }
 
-        // 解析資料並補齊 missing fields
         const rawData = {
             title: formData.get('title'),
             slug: formData.get('slug'),
@@ -51,7 +50,7 @@ export async function createNewPage(formData: FormData): Promise<ActionState> {
             content: formData.get('content') || '',
             seo: formData.get('seo') ? JSON.parse(formData.get('seo') as string) : undefined,
             tracking: formData.get('tracking') ? JSON.parse(formData.get('tracking') as string) : undefined,
-            products: [], // 初始產品清單為空
+            products: [], 
         };
 
         const validated = NewPageSchema.safeParse(rawData);
@@ -79,7 +78,8 @@ export async function updateNewPage(id: string, formData: FormData): Promise<Act
         const user = await getSessionUser();
         const productsJson = formData.get('products') as string;
         
-        if (user.role === Role.PRODUCT) {
+        // 🔒 權限防線：產品部只能更新產品列表
+        if (user.role === 'PRODUCT') {
             await prisma.newPage.update({
                 where: { id },
                 data: {
@@ -90,7 +90,8 @@ export async function updateNewPage(id: string, formData: FormData): Promise<Act
             return { success: true, message: '產品勾選清單已儲存' };
         }
 
-        if (user.role === Role.PLANNING || user.role === Role.DEV) {
+        // 🔓 企劃與開發：可以更新所有內容
+        if (user.role === 'PLANNING' || user.role === 'DEV') {
             const rawData = {
                 title: formData.get('title'),
                 slug: formData.get('slug'),
@@ -120,16 +121,48 @@ export async function updateNewPage(id: string, formData: FormData): Promise<Act
         }
 
         return { success: false, message: '無效的角色權限' };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Update Error:', error);
-        return { success: false, message: '更新失敗，請稍後再試' };
+        return { success: false, message: error.message || '更新失敗，請稍後再試' };
+    }
+}
+
+/**
+ * ✅ 新增：切換活動頁面發佈狀態 (Enabled Status)
+ * 用於表格列表中的 Switch 快速切換
+ */
+export async function toggleNewPageStatus(id: string, currentStatus: boolean): Promise<ActionState> {
+    try {
+        const user = await getSessionUser();
+
+        // 🔒 權限防線：產品部禁止切換發佈狀態
+        if (user.role === 'PRODUCT') {
+            return { success: false, message: '權限不足：產品部無法變更發佈狀態' };
+        }
+
+        const updatedPage = await prisma.newPage.update({
+            where: { id },
+            data: { enabled: !currentStatus },
+        });
+
+        revalidatePath('/cms/new-pages');
+        // 同時重新驗證前台動態路由
+        revalidatePath(`/pages/${updatedPage.slug}`);
+        
+        return { 
+            success: true, 
+            message: `頁面「${updatedPage.title}」已${!currentStatus ? '發佈' : '撤下'}` 
+        };
+    } catch (error) {
+        console.error('Toggle Status Error:', error);
+        return { success: false, message: '狀態更新失敗' };
     }
 }
 
 export async function deleteNewPage(id: string): Promise<ActionState> {
     try {
         const user = await getSessionUser();
-        if (user.role === Role.PRODUCT) return { success: false, message: '權限不足' };
+        if (user.role === 'PRODUCT') return { success: false, message: '權限不足' };
 
         await prisma.newPage.delete({ where: { id } });
         revalidatePath('/cms/new-pages');

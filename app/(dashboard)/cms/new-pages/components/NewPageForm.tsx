@@ -11,17 +11,38 @@ import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
-import { toast } from "sonner" // ✅ 改用 Sonner
+import { Badge } from '@/components/ui/badge';
+import { toast } from "sonner"
 import PageBaseInfo from './PageBaseInfo';
 import ProductSectionManager from './ProductSectionManager';
 import PageSeoSettings from './PageSeoSettings';
 import Link from 'next/link';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ShieldCheck, UserCog, Package } from 'lucide-react';
 
-export default function NewPageForm({ initialData }: { initialData?: any }) {
+// 定義角色枚舉（與 Prisma 保持一致）
+type Role = 'DEV' | 'PLANNING' | 'PRODUCT';
+
+interface NewPageFormProps {
+    initialData?: any;
+    userRole?: Role; // 傳入當前使用者角色
+}
+
+export default function NewPageForm({ initialData, userRole = 'PLANNING' }: NewPageFormProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const isEditMode = !!initialData?.id;
+
+    // --- 權限判斷邏輯 ---
+    const isDev = userRole === 'DEV';
+    const isPlanning = userRole === 'PLANNING';
+    const isProduct = userRole === 'PRODUCT';
+
+    // 只有 DEV 和 PLANNING 可以修改基本資訊與 SEO
+    const canEditMainContent = isDev || isPlanning;
+    // 所有角色都可以編輯產品（這是產品部的核心職責）
+    const canEditProducts = true; 
+    // 是否隱藏 SEO 頁籤 (產品部不需看見)
+    const showSeoTab = isDev || isPlanning;
 
     // React Hook Form 初始化
     const form = useForm<NewPageFormValues>({
@@ -57,19 +78,18 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
                     }
                 });
 
+                // 💡 可以在這裡額外附加角色資訊到後端，或是由後端 Session 檢查
                 const result = isEditMode 
                     ? await updateNewPage(initialData.id, formData) 
                     : await createNewPage(formData);
 
                 if (result.success) {
-                    // ✅ Sonner 語法：第一個參數是標題字串
                     toast.success(isEditMode ? '更新成功' : '建立成功', {
                         description: result.message 
                     });
                     router.push('/cms/new-pages');
                     router.refresh();
                 } else {
-                    // ✅ Sonner 語法：失敗使用 toast.error
                     toast.error('儲存失敗', {
                         description: result.message 
                     });
@@ -82,15 +102,11 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
         });
     };
 
-    // ✅ 必填提示：提交失敗時觸發此函式
     const onInvalid = (errors: any) => {
         console.warn("表單驗證未通過:", errors);
-        
         const errorFields = Object.keys(errors);
-        
-        // ✅ Sonner 語法
         toast.error('請檢查必填欄位', {
-            description: `尚有 ${errorFields.length} 個項目未正確填寫，請檢查標記紅色的部分。`,
+            description: `尚有 ${errorFields.length} 個項目未正確填寫。`,
         });
     };
 
@@ -99,10 +115,15 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
             <div className="flex flex-col min-h-screen bg-white animate-in fade-in duration-500">
                 {/* 🎯 頁首導覽 */}
                 <div className="sticky top-0 z-50 bg-white border-b px-8 py-5 flex justify-between items-center shadow-sm">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-1">
                         <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
                             <div className="w-1.5 h-6 bg-blue-600 rounded-full" />
                             {isEditMode ? '編輯活動內容' : '建立新活動頁面'}
+                            
+                            {/* 顯示目前權限標籤 */}
+                            {isProduct && <Badge variant="secondary" className="ml-2 bg-amber-50 text-amber-600 border-amber-200 gap-1"><Package size={12}/> 產品部權限</Badge>}
+                            {isPlanning && <Badge variant="secondary" className="ml-2 bg-blue-50 text-blue-600 border-blue-200 gap-1"><UserCog size={12}/> 企劃部權限</Badge>}
+                            {isDev && <Badge variant="secondary" className="ml-2 bg-purple-50 text-purple-600 border-purple-200 gap-1"><ShieldCheck size={12}/> 開發者權限</Badge>}
                         </h1>
                     </div>
                     <div className="flex items-center gap-3">
@@ -120,33 +141,45 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
                 </div>
 
                 <main className="p-8 max-w-[1400px] mx-auto w-full pb-20">
-                    {/* 頂部錯誤快速提示面板 */}
-                    {Object.keys(form.formState.errors).length > 0 && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 animate-in zoom-in-95">
+                    {/* 權限提示面板：僅針對產品部顯示 */}
+                    {isProduct && (
+                        <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-3 text-amber-700">
                             <AlertCircle size={20} />
-                            <p className="text-sm font-bold">頁面包含未填寫的必填資訊，請檢查下方各分頁的紅色錯誤訊息。</p>
+                            <p className="text-sm font-bold">您目前以產品部權限登入，僅能修改「產品配置」區塊，基本資訊僅供檢視。</p>
                         </div>
                     )}
 
-                    <Tabs defaultValue="base" className="w-full">
-                        <TabsList className="grid w-full grid-cols-3 mb-8 h-12 bg-slate-100/50 p-1 rounded-xl">
+                    <Tabs defaultValue={isProduct ? "products" : "base"} className="w-full">
+                        <TabsList className={`grid w-full mb-8 h-12 bg-slate-100/50 p-1 rounded-xl ${showSeoTab ? 'grid-cols-3' : 'grid-cols-2'}`}>
                             <TabsTrigger value="base" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
                                 1. 基本資訊 {form.formState.errors.title || form.formState.errors.slug ? '●' : ''}
                             </TabsTrigger>
-                            <TabsTrigger value="products" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">2. 產品配置</TabsTrigger>
-                            <TabsTrigger value="seo" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">3. SEO 與 追蹤</TabsTrigger>
+                            <TabsTrigger value="products" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                2. 產品配置
+                            </TabsTrigger>
+                            {showSeoTab && (
+                                <TabsTrigger value="seo" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                                    3. SEO 與 追蹤
+                                </TabsTrigger>
+                            )}
                         </TabsList>
                         
                         <div className="mt-6">
                             <TabsContent value="base" className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                <PageBaseInfo form={form} />
+                                {/* 💡 傳入 readOnly 屬性給 PageBaseInfo */}
+                                <PageBaseInfo form={form} readOnly={!canEditMainContent} />
                             </TabsContent>
+                            
                             <TabsContent value="products" className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                {/* 💡 產品部可以直接操作，不需要 readOnly */}
                                 <ProductSectionManager form={form} />
                             </TabsContent>
-                            <TabsContent value="seo" className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                <PageSeoSettings form={form} />
-                            </TabsContent>
+                            
+                            {showSeoTab && (
+                                <TabsContent value="seo" className="animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <PageSeoSettings form={form} />
+                                </TabsContent>
+                            )}
                         </div>
                     </Tabs>
                 </main>

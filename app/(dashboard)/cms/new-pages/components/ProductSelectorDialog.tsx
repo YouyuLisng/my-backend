@@ -28,16 +28,18 @@ export default function ProductSelectorDialog({
     const [tempSelected, setTempSelected] = useState<string[]>([]);
     const [search, setSearch] = useState('');
 
+    // ✅ 打開時，同步外部傳入的已選取 ID
     useEffect(() => {
         if (open) {
-            setTempSelected(selectedIds);
-            loadProducts();
+            setTempSelected([...selectedIds]); 
+            loadProducts(); // 打開時預設加載（或留空等待搜尋）
         }
-    }, [open]);
+    }, [open, selectedIds]);
 
     const loadProducts = async () => {
         setLoading(true);
         try {
+            // ✅ 修正參數名稱：mode 為 GRUP 時傳 qmgrupcd，其他傳 qgrupcd
             const params = {
                 [mode === 'GRUP' ? 'qmgrupcd' : 'qgrupcd']: search.trim() || undefined,
             };
@@ -54,7 +56,6 @@ export default function ProductSelectorDialog({
                     return true;
                 });
             }
-
             setProducts(rawData);
         } catch (err) {
             console.error('載入產品失敗', err);
@@ -71,7 +72,6 @@ export default function ProductSelectorDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            {/* ✅ 修正：h-[90vh] 確保彈窗不會超出螢幕，flex-col 讓內部佈局可控 */}
             <DialogContent className="sm:max-w-[850px] h-[90vh] flex flex-col p-0 border-none shadow-2xl overflow-hidden rounded-2xl">
                 <DialogHeader className="p-6 bg-white border-b flex-shrink-0">
                     <div className="flex items-center gap-2">
@@ -98,17 +98,19 @@ export default function ProductSelectorDialog({
                     </Button>
                 </div>
 
-                {/* ✅ 修正：flex-1 讓列表區域自動佔滿剩餘空間，確保 ScrollArea 生效 */}
                 <div className="flex-1 overflow-hidden relative">
                     <ScrollArea className="h-full p-6 bg-slate-50/30">
                         <div className="grid grid-cols-1 gap-3 pb-4">
+                            {products.length === 0 && !loading && (
+                                <p className="text-center py-10 text-slate-400 italic">請輸入關鍵字搜尋產品</p>
+                            )}
                             {products.map((p: any, index: number) => {
                                 const id = mode === 'GRUP' ? p['團型編號'] : p['團體編號'];
                                 const isSelected = tempSelected.includes(id);
 
                                 return (
                                     <div
-                                        key={index} 
+                                        key={`${id}-${index}`} 
                                         onClick={() => toggleSelect(id)}
                                         className={`flex items-center justify-between p-4 border rounded-xl cursor-pointer transition-all ${
                                             isSelected 
@@ -120,41 +122,25 @@ export default function ProductSelectorDialog({
                                             <Checkbox
                                                 checked={isSelected}
                                                 onCheckedChange={() => toggleSelect(id)}
-                                                className="size-5 data-[state=checked]:bg-blue-600"
+                                                className="size-5"
                                             />
-                                            
                                             <div className="relative size-16 rounded-lg overflow-hidden border bg-slate-100 flex-shrink-0">
                                                 {p['主圖'] ? (
                                                     <Image 
                                                         src={`https://travel.dtsgroup.com.tw/${p['主圖']}`}
-                                                        alt={p['產品名稱'] || '行程'}
-                                                        fill
-                                                        className="object-cover"
+                                                        alt="product" 
+                                                        fill 
+                                                        className="object-cover" 
                                                         unoptimized
                                                     />
-                                                ) : (
-                                                    <div className="flex items-center justify-center h-full text-slate-300">
-                                                        <ImageIcon size={20} />
-                                                    </div>
-                                                )}
+                                                ) : <div className="flex items-center justify-center h-full"><ImageIcon size={20} className="text-slate-300"/></div>}
                                             </div>
-
                                             <div className="space-y-1">
-                                                <p className="text-sm font-bold text-slate-800 line-clamp-1">
-                                                    {p['產品名稱'] || p['個團名稱'] || '未命名行程'}
-                                                </p>
-                                                <div className="flex gap-3 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                                    <span className="bg-slate-100 px-1.5 py-0.5 rounded">編號: {id}</span>
-                                                </div>
+                                                <p className="text-sm font-bold text-slate-800 line-clamp-1">{p['產品名稱'] || p['個團名稱']}</p>
+                                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[10px] font-bold text-slate-400">編號: {id}</span>
                                             </div>
                                         </div>
-                                        
-                                        <div className="text-right flex-shrink-0">
-                                            <p className="text-xs text-slate-400 font-bold mb-0.5">直客成人價</p>
-                                            <p className="text-lg font-black text-orange-600">
-                                                ${p['直客成人售價']?.toLocaleString() || '--'}
-                                            </p>
-                                        </div>
+                                        <p className="text-lg font-black text-orange-600">${p['直客成人售價']?.toLocaleString()}</p>
                                     </div>
                                 );
                             })}
@@ -162,15 +148,12 @@ export default function ProductSelectorDialog({
                     </ScrollArea>
                 </div>
 
-                {/* ✅ 修正：flex-shrink-0 確保 Footer 不會因為內容多而被壓縮消失，固定在最底部 */}
                 <DialogFooter className="p-6 border-t bg-white gap-3 flex-shrink-0">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="font-bold text-slate-500">
-                        取消
-                    </Button>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)}>取消</Button>
                     <Button
                         className="bg-blue-600 hover:bg-blue-700 px-8 font-bold"
                         onClick={() => {
-                            onConfirm(tempSelected);
+                            onConfirm(tempSelected); // ✅ 回傳最新的選取陣列
                             onOpenChange(false);
                         }}
                     >
