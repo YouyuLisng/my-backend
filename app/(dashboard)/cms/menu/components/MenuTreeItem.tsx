@@ -129,12 +129,12 @@ const MenuTreeItem = React.forwardRef<
             item.gaCategory = gaCategory;
             item.gaLabel = gaLabel;
 
-            // ✅ Sonner 語法
+            
             toast.success('更新成功');
             setEditOpen(false);
         } catch (err: any) {
             console.error('❌ 更新失敗:', err);
-            // ✅ Sonner 語法
+            
             toast.error('更新失敗', { description: err?.message });
         } finally {
             setSaving(false);
@@ -147,13 +147,13 @@ const MenuTreeItem = React.forwardRef<
             const res = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            // ✅ Sonner 語法
+            
             toast.success('已刪除');
             window.dispatchEvent(new CustomEvent('menu:changed'));
             setDelOpen(false);
         } catch (err: any) {
             console.error('刪除失敗:', err);
-            // ✅ Sonner 語法
+            
             toast.error('刪除失敗', { description: err?.message });
         } finally {
             setDeleting(false);

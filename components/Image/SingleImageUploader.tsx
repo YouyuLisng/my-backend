@@ -32,10 +32,10 @@ export default function SingleImageUploader({
         try {
             await deleteFromVercelBlob(url);
             onChange(undefined);
-            // ✅ Sonner 語法
+            
             toast.success('圖片已移除');
         } catch (err: any) {
-            // ✅ Sonner 語法
+            
             toast.error('移除失敗', { description: '請重試' });
         }
     }, [onChange]);

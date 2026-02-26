@@ -137,13 +137,13 @@ export default function MenuClient() {
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            // ✅ Sonner 語法
+            
             toast.success('順序已更新');
 
             await fetchMenu({ silent: true });
         } catch (e) {
             console.error('更新選單順序失敗:', e);
-            // ✅ Sonner 語法
+            
             toast.error('排序失敗', {
                 description: '請稍後再試'
             });
@@ -174,7 +174,7 @@ export default function MenuClient() {
             const payload = await res.json();
             if (!res.ok) throw new Error(payload?.message || '建立失敗');
 
-            // ✅ Sonner 語法
+            
             toast.success('已新增選單');
 
             setCreateOpen(false);
@@ -189,7 +189,7 @@ export default function MenuClient() {
 
             fetchMenu({ silent: true });
         } catch (err: any) {
-            // ✅ Sonner 語法
+            
             toast.error('新增失敗', {
                 description: err?.message || '請稍後再試'
             });

@@ -1,10 +1,8 @@
 // app/(dashboard)/cms/new-pages/page.tsx
-
-import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { NewPageDataTable } from './components/NewPageDataTable';
-import { LayoutGrid, Package, UserCog, ShieldCheck } from 'lucide-react';
+import { Package, UserCog, ShieldCheck } from 'lucide-react';
 import { Role } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 

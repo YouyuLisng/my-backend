@@ -17,17 +17,17 @@ async function main() {
         },
         create: {
             email: 'admin@darong.com',
-            name: '系統管理員(DEV)',
+            name: '系統管理員',
             password: hashedPassword,
             role: 'DEV',
         },
     });
 
     console.log('-----------------------------------------');
-    console.log('✅ 測試帳號建立成功！');
-    console.log(`📧 帳號: ${admin.email}`);
-    console.log(`🔑 密碼: ${rawPassword}`);
-    console.log(`🛡️  權限: ${admin.role}`);
+    console.log('測試帳號建立成功！');
+    console.log(`帳號: ${admin.email}`);
+    console.log(`密碼: ${rawPassword}`);
+    console.log(`權限: ${admin.role}`);
     console.log('-----------------------------------------');
 }
 

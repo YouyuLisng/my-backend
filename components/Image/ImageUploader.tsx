@@ -86,7 +86,7 @@ export default function ImageUploader({
                 const { url } = await res.json();
                 return { url, name: file.name };
             } catch (err) {
-                // ✅ Sonner 語法
+                
                 toast.error('上傳失敗', {
                     description: `${file.name} 無法上傳`,
                 });
@@ -114,7 +114,7 @@ export default function ImageUploader({
             if (currentImages.length + uploaded.length >= maxCount) break;
 
             if (file.size / 1024 / 1024 > 50) {
-                // ✅ Sonner 語法
+                
                 toast.error('檔案過大', {
                     description: `${file.name} 超過 50MB`,
                 });
@@ -123,7 +123,7 @@ export default function ImageUploader({
 
             const validSize = await validateImageSize(file);
             if (!validSize) {
-                // ✅ Sonner 語法
+                
                 toast.error('圖片尺寸不符', {
                     description: `必須是 ${requiredSize?.width}x${requiredSize?.height}`,
                 });

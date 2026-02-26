@@ -237,7 +237,7 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
             const result = await toggleCardStatus(id, currentStatus);
 
             if (!result.success) {
-                // ✅ Sonner 語法
+                
                 toast.error('更新失敗', {
                     description: result.error ? '發生錯誤' : undefined,
                 });
@@ -247,7 +247,7 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
                     )
                 );
             } else {
-                // ✅ Sonner 語法
+                
                 toast.success('狀態已更新');
             }
         } catch (error) {
@@ -277,11 +277,11 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
         try {
             const result = await deleteCard(deleteId);
             if (result.success) {
-                // ✅ Sonner 語法
+                
                 toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                // ✅ Sonner 語法
+                
                 toast.error('刪除失敗');
             }
         } catch (error) {
@@ -315,7 +315,7 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
                     const result = await reorderCards(idList);
 
                     if (!result.success) {
-                        // ✅ Sonner 語法
+                        
                         toast.error('排序更新失敗');
                         setData(initialData);
                     }

@@ -140,7 +140,7 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
             const result = await toggleModuleStatus(id, currentStatus);
 
             if (!result.success) {
-                // ✅ Sonner 語法
+                
                 toast.error('更新失敗', {
                     description: result.error,
                 });
@@ -150,7 +150,7 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
                     )
                 );
             } else {
-                // ✅ Sonner 語法
+                
                 toast.success('狀態已更新');
             }
         } catch (error) {
@@ -180,11 +180,11 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
         try {
             const result = await deleteModule(deleteId);
             if (result.success) {
-                // ✅ Sonner 語法
+                
                 toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                // ✅ Sonner 語法
+                
                 toast.error('刪除失敗');
             }
         } catch (error) {

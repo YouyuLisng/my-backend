@@ -63,7 +63,7 @@ export default function PDFUploader({
                 const { url } = await res.json();
                 return { url, name: file.name };
             } catch (err) {
-                // ✅ Sonner 語法
+                
                 toast.error('上傳失敗', {
                     description: `${file.name} 上傳時發生問題`,
                 });
@@ -105,7 +105,7 @@ export default function PDFUploader({
 
         for (const file of files) {
             if (file.type !== 'application/pdf') {
-                // ✅ Sonner 語法
+                
                 toast.error('格式錯誤', {
                     description: `${file.name} 不是 PDF`,
                 });
@@ -113,7 +113,7 @@ export default function PDFUploader({
             }
 
             if (file.size / 1024 / 1024 > 50) {
-                // ✅ Sonner 語法
+                
                 toast.error('檔案過大', {
                     description: `${file.name} 超過 50MB`,
                 });
@@ -128,7 +128,7 @@ export default function PDFUploader({
             const newList = [...current, ...uploaded].slice(0, maxCount);
             onChange(newList);
 
-            // ✅ Sonner 語法
+            
             toast.success('上傳完成', {
                 description: `成功上傳 ${uploaded.length} 份 PDF`,
             });

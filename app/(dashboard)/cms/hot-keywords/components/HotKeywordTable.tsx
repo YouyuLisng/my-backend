@@ -224,7 +224,7 @@ export function HotKeywordDataTable({
         try {
             const result = await toggleHotKeywordStatus(id, currentStatus);
             if (!result.success) {
-                // ✅ Sonner 語法
+                
                 toast.error('更新失敗', {
                     description: result.error,
                 });
@@ -236,7 +236,7 @@ export function HotKeywordDataTable({
                     )
                 );
             } else {
-                // ✅ Sonner 語法
+                
                 toast.success('狀態已更新');
             }
         } catch (error) {
@@ -266,11 +266,11 @@ export function HotKeywordDataTable({
         try {
             const result = await deleteHotKeyword(deleteId);
             if (result.success) {
-                // ✅ Sonner 語法
+                
                 toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                // ✅ Sonner 語法
+                
                 toast.error('刪除失敗');
             }
         } catch (error) {
