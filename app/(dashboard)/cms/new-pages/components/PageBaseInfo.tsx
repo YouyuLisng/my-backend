@@ -1,6 +1,4 @@
 'use client';
-
-import React from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { NewPageFormValues } from '@/schemas/newPage';
 import {
@@ -18,7 +16,6 @@ import { Switch } from '@/components/ui/switch';
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 import dynamic from 'next/dynamic';
 
-// ✅ 解決 Hydration Error：禁用 SSR
 const TinyEditor = dynamic(() => import('@/components/TinyEditor'), { 
     ssr: false,
     loading: () => <div className="h-[400px] w-full bg-slate-50 animate-pulse rounded-xl border border-slate-200" />
@@ -29,24 +26,20 @@ interface Props {
 }
 
 export default function PageBaseInfo({ form }: Props) {
-    // 輔助組件：MUI 風格標籤與外框封裝
     const MuiFormItem = ({ label, children, required, description }: any) => (
         <FormItem className="space-y-1.5 relative">
             <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1 flex items-center gap-1">
                 {label} 
-                {/* ✅ 必填標記：顯示紅色星號 */}
                 {required && <span className="text-red-500 text-sm font-black">*</span>}
             </FormLabel>
             <FormControl>{children}</FormControl>
             {description && <FormDescription className="text-[11px] ml-1 text-slate-400">{description}</FormDescription>}
-            {/* ✅ 錯誤訊息顯示區 */}
             <FormMessage className="text-[11px] ml-1 font-bold text-red-500" />
         </FormItem>
     );
 
     return (
         <div className="space-y-10 animate-in fade-in duration-500">
-            {/* 第一區塊：核心路徑設定 */}
             <section className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
                 <div className="md:col-span-4 space-y-1">
                     <h3 className="text-lg font-bold text-slate-800">頁面核心設定</h3>
@@ -105,7 +98,6 @@ export default function PageBaseInfo({ form }: Props) {
                             </MuiFormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name="enabled"
@@ -127,7 +119,6 @@ export default function PageBaseInfo({ form }: Props) {
                     />
                 </div>
             </section>
-
             {/* 第二區塊：視覺排版 (主圖與手機圖) */}
             <section className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
                 <div className="md:col-span-4 space-y-1">
@@ -161,7 +152,6 @@ export default function PageBaseInfo({ form }: Props) {
                     />
                 </div>
             </section>
-
             {/* 第三區塊：詳細活動說明 */}
             <section className="space-y-4">
                 <div className="flex items-center gap-3 border-b pb-2">
