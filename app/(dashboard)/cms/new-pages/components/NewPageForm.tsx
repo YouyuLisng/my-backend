@@ -17,7 +17,7 @@ import PageBaseInfo from './PageBaseInfo';
 import ProductSectionManager from './ProductSectionManager';
 import PageSeoSettings from './PageSeoSettings';
 import Link from 'next/link';
-import { AlertCircle, ShieldCheck, UserCog, Package } from 'lucide-react';
+import { AlertCircle, ShieldCheck, UserCog, Package, Lock } from 'lucide-react';
 
 // 定義角色枚舉（與 Prisma 保持一致）
 type Role = 'DEV' | 'PLANNING' | 'PRODUCT';
@@ -39,8 +39,6 @@ export default function NewPageForm({ initialData, userRole = 'PLANNING' }: NewP
 
     // 只有 DEV 和 PLANNING 可以修改基本資訊與 SEO
     const canEditMainContent = isDev || isPlanning;
-    // 所有角色都可以編輯產品（這是產品部的核心職責）
-    const canEditProducts = true; 
     // 是否隱藏 SEO 頁籤 (產品部不需看見)
     const showSeoTab = isDev || isPlanning;
 
@@ -78,7 +76,6 @@ export default function NewPageForm({ initialData, userRole = 'PLANNING' }: NewP
                     }
                 });
 
-                // 💡 可以在這裡額外附加角色資訊到後端，或是由後端 Session 檢查
                 const result = isEditMode 
                     ? await updateNewPage(initialData.id, formData) 
                     : await createNewPage(formData);
@@ -140,7 +137,7 @@ export default function NewPageForm({ initialData, userRole = 'PLANNING' }: NewP
                     </div>
                 </div>
 
-                <main className="p-8 max-w-[1400px] mx-auto w-full pb-20">
+                <main className="py-8 mx-auto w-full pb-20">
                     {/* 權限提示面板：僅針對產品部顯示 */}
                     {isProduct && (
                         <div className="mb-6 p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-3 text-amber-700">
@@ -149,10 +146,20 @@ export default function NewPageForm({ initialData, userRole = 'PLANNING' }: NewP
                         </div>
                     )}
 
+                    {/* 🎯 根據錯誤狀態顯示警示 */}
+                    {Object.keys(form.formState.errors).length > 0 && !isProduct && (
+                        <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 animate-in zoom-in-95">
+                            <AlertCircle size={20} />
+                            <p className="text-sm font-bold">頁面包含未填寫的必填資訊，請檢查下方各分頁的紅色標記。</p>
+                        </div>
+                    )}
+
+                    {/* 預設頁籤切換：產品部預設看產品分頁 */}
                     <Tabs defaultValue={isProduct ? "products" : "base"} className="w-full">
                         <TabsList className={`grid w-full mb-8 h-12 bg-slate-100/50 p-1 rounded-xl ${showSeoTab ? 'grid-cols-3' : 'grid-cols-2'}`}>
                             <TabsTrigger value="base" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
                                 1. 基本資訊 {form.formState.errors.title || form.formState.errors.slug ? '●' : ''}
+                                {isProduct && <Lock size={12} className="ml-2 text-slate-400" />}
                             </TabsTrigger>
                             <TabsTrigger value="products" className="rounded-lg font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">
                                 2. 產品配置
@@ -166,12 +173,11 @@ export default function NewPageForm({ initialData, userRole = 'PLANNING' }: NewP
                         
                         <div className="mt-6">
                             <TabsContent value="base" className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                {/* 💡 傳入 readOnly 屬性給 PageBaseInfo */}
+                                {/* 💡 傳入 readOnly 屬性 */}
                                 <PageBaseInfo form={form} readOnly={!canEditMainContent} />
                             </TabsContent>
                             
                             <TabsContent value="products" className="animate-in fade-in slide-in-from-top-2 duration-300">
-                                {/* 💡 產品部可以直接操作，不需要 readOnly */}
                                 <ProductSectionManager form={form} />
                             </TabsContent>
                             

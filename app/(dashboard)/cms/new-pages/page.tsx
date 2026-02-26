@@ -3,14 +3,15 @@
 import React from 'react';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { NewPageDataTable } from './components/NewPageDataTable'; // 請確保路徑正確
-import { LayoutGrid } from 'lucide-react';
+import { NewPageDataTable } from './components/NewPageDataTable';
+import { LayoutGrid, Package, UserCog, ShieldCheck } from 'lucide-react';
 import { Role } from '@prisma/client';
+import { Badge } from '@/components/ui/badge';
 
 export default async function NewPagesPage() {
     // 1. 取得 Session 使用者資訊與權限
     const session = await auth();
-    const userRole = (session?.user?.role as Role) || 'PRODUCT';
+    const userRole = (session?.user?.role as Role) || Role.PRODUCT;
 
     // 2. 從資料庫讀取所有活動頁面
     const pages = await prisma.newPage.findMany({
@@ -19,26 +20,47 @@ export default async function NewPagesPage() {
         },
     });
 
-    return (
-        <div className="p-8 max-w-[1400px] mx-auto space-y-8 animate-in fade-in duration-700">
-            {/* 標題區塊 */}
-            <div className="space-y-1 border-b pb-6">
-                <h1 className="text-4xl font-black tracking-tighter text-slate-900 flex items-center gap-3">
-                    <LayoutGrid className="text-blue-600 size-8" />
-                    活動頁面管理
-                </h1>
-                <p className="text-slate-500 font-medium italic">
-                    精準控管全站行銷活動、產品分組配置與 SEO 追蹤
-                </p>
-            </div>
+    // 權限標籤顯示邏輯
+    const getRoleBadge = (role: Role) => {
+        switch (role) {
+            case Role.DEV:
+                return (
+                    <Badge
+                        variant="secondary"
+                        className="bg-purple-50 text-purple-600 border-purple-200 gap-1 h-6"
+                    >
+                        <ShieldCheck size={12} /> 開發者
+                    </Badge>
+                );
+            case Role.PLANNING:
+                return (
+                    <Badge
+                        variant="secondary"
+                        className="bg-blue-50 text-blue-600 border-blue-200 gap-1 h-6"
+                    >
+                        <UserCog size={12} /> 企劃部
+                    </Badge>
+                );
+            case Role.PRODUCT:
+                return (
+                    <Badge
+                        variant="secondary"
+                        className="bg-amber-50 text-amber-600 border-amber-200 gap-1 h-6"
+                    >
+                        <Package size={12} /> 產品部
+                    </Badge>
+                );
+            default:
+                return null;
+        }
+    };
 
-            {/* 3. 引入 Table 組件並傳入資料與角色 */}
-            <div className="animate-in slide-in-from-bottom-4 duration-500">
-                <NewPageDataTable 
-                    data={pages} 
-                    userRole={userRole} 
-                />
-            </div>
+    return (
+        <div className="container mx-auto py-8">
+            <h1 className="text-2xl font-bold mb-6">
+                活動頁管理
+            </h1>
+            <NewPageDataTable data={pages} userRole={userRole} />
         </div>
     );
 }

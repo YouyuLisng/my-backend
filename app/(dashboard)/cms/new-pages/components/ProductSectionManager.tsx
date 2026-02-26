@@ -7,9 +7,10 @@ import { NewPageFormValues } from '@/schemas/newPage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Plus, Trash2, GripVertical, PackageSearch, ImageIcon, Loader2 } from 'lucide-react';
+import { Plus, Trash2, GripVertical, PackageSearch, ImageIcon, Loader2, Lock } from 'lucide-react';
 import ProductSelectorDialog from './ProductSelectorDialog';
 import { fetchProductList } from '@/services/productService';
+import { cn } from '@/lib/utils';
 
 // --- 內部組件：負責根據 ID 顯示詳細資料的卡片 ---
 function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, onRemove: () => void }) {
@@ -20,7 +21,6 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
         const loadInfo = async () => {
             setLoading(true);
             try {
-                // 根據模式傳入對應參數
                 const params = {
                     [mode === 'GRUP' ? 'qmgrupcd' : 'qgrupcd']: id,
                 };
@@ -37,7 +37,6 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
 
     return (
         <div className="group relative flex flex-col bg-white border border-slate-200 p-2 rounded-xl shadow-sm hover:border-blue-300 hover:shadow-md transition-all w-full sm:w-[calc(50%-8px)] md:w-[calc(33.33%-11px)] lg:w-[calc(20%-12.8px)]">
-            {/* 移除按鈕 */}
             <button
                 type="button"
                 onClick={onRemove}
@@ -46,7 +45,6 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
                 <Trash2 size={14} />
             </button>
 
-            {/* 圖片預覽 - 16:10 比例 */}
             <div className="relative w-full aspect-[16/10] rounded-lg overflow-hidden border bg-slate-50 flex-shrink-0 mb-2">
                 {loading ? (
                     <div className="flex items-center justify-center h-full bg-slate-50">
@@ -67,11 +65,8 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
                 )}
             </div>
 
-            {/* 產品資訊區塊 */}
             <div className="flex flex-col flex-1 min-w-0 space-y-1">
-                <span className="text-[10px] font-bold text-blue-600 font-mono truncate px-1">
-                    {id}
-                </span>
+                <span className="text-[10px] font-bold text-blue-600 font-mono truncate px-1">{id}</span>
                 <p className="text-[11px] font-bold text-slate-700 line-clamp-2 leading-[1.3] h-7 px-1">
                     {loading ? '載入中...' : (data?.['產品名稱'] || data?.['個團名稱'] || '未命名行程')}
                 </p>
@@ -83,7 +78,12 @@ function ProductDetailCard({ id, mode, onRemove }: { id: string, mode: string, o
     );
 }
 
-export default function ProductSectionManager({ form }: { form: UseFormReturn<NewPageFormValues> }) {
+interface ProductSectionManagerProps {
+    form: UseFormReturn<NewPageFormValues>;
+    readOnly?: boolean; // 新增：用於區分企劃部與產品部
+}
+
+export default function ProductSectionManager({ form, readOnly = false }: ProductSectionManagerProps) {
     const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: 'products',
@@ -93,7 +93,19 @@ export default function ProductSectionManager({ form }: { form: UseFormReturn<Ne
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
-    // ✅ 取得當前操作區塊的產品清單，用於傳入 SelectorDialog
+    // ✅ 核心修正：預設有一個區塊
+    // 如果是新頁面且目前沒有任何產品區塊，則自動增加一個預設區塊
+    useEffect(() => {
+        if (fields.length === 0) {
+            append({ 
+                type: 'GRUPCD', 
+                refCode: '推薦行程', 
+                productIds: [], 
+                sortOrder: 0 
+            }, { shouldFocus: false });
+        }
+    }, [fields.length, append]);
+
     const currentSelectedIds = activeIndex !== null 
         ? form.watch(`products.${activeIndex}.productIds`) 
         : [];
@@ -105,54 +117,67 @@ export default function ProductSectionManager({ form }: { form: UseFormReturn<Ne
                     <div className="w-1.5 h-6 bg-orange-500 rounded-full" />
                     <h3 className="text-lg font-bold text-slate-800">活動產品區塊管理</h3>
                 </div>
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="bg-white border-blue-200 text-blue-600 hover:bg-blue-50 font-bold shadow-sm"
-                    onClick={() => append({ 
-                        type: 'GRUPCD', 
-                        refCode: '新分組區塊', 
-                        productIds: [], 
-                        sortOrder: fields.length 
-                    })}
-                >
-                    <Plus className="mr-2 size-4" /> 新增產品區塊
-                </Button>
+                
+                {/* ✅ 只有非唯讀（企劃部）可以手動新增多個區塊 */}
+                {!readOnly && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="bg-white border-blue-200 text-blue-600 hover:bg-blue-50 font-bold shadow-sm"
+                        onClick={() => append({ 
+                            type: 'GRUPCD', 
+                            refCode: '新分組區塊', 
+                            productIds: [], 
+                            sortOrder: fields.length 
+                        })}
+                    >
+                        <Plus className="mr-2 size-4" /> 新增產品區塊
+                    </Button>
+                )}
             </div>
 
             <div className="space-y-10">
                 {fields.map((field, index) => {
-                    // ✅ 監聽該 index 下的產品 ID 陣列
                     const productIds = form.watch(`products.${index}.productIds`) || [];
 
                     return (
                         <Card key={field.id} className="border-slate-200 shadow-sm overflow-hidden group/card bg-white border-l-4 border-l-blue-500">
                             <CardHeader className="bg-slate-50/50 p-4 border-b flex flex-row items-center justify-between space-y-0">
                                 <div className="flex items-center gap-4 flex-1">
-                                    <GripVertical className="text-slate-300 cursor-grab active:cursor-grabbing hover:text-slate-500" />
+                                    <GripVertical className={cn("text-slate-300", !readOnly ? "cursor-grab active:cursor-grabbing hover:text-slate-500" : "opacity-0")} />
                                     <div className="flex flex-col gap-1 w-full max-w-sm">
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">分組標題名稱 (前台顯示)</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1 flex items-center gap-1">
+                                            分組標題名稱 (前台顯示)
+                                            {readOnly && <Lock size={10} />}
+                                        </span>
                                         <Input
                                             {...form.register(`products.${index}.refCode`)}
-                                            className="h-9 bg-white border-slate-200 focus:ring-4 focus:ring-blue-50 font-bold text-slate-700"
+                                            disabled={readOnly} // ✅ 產品部不可改標題
+                                            className={cn(
+                                                "h-9 bg-white border-slate-200 focus:ring-4 focus:ring-blue-50 font-bold text-slate-700",
+                                                readOnly && "bg-transparent border-none shadow-none px-0 h-auto text-lg"
+                                            )}
                                             placeholder="例如：熱門行程推薦"
                                         />
                                     </div>
                                 </div>
-                                <Button 
-                                    type="button"
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" 
-                                    onClick={() => remove(index)}
-                                >
-                                    <Trash2 size={18} />
-                                </Button>
+                                
+                                {/* ✅ 只有非唯讀（企劃部）可以刪除整個區塊 */}
+                                {!readOnly && (
+                                    <Button 
+                                        type="button"
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors" 
+                                        onClick={() => remove(index)}
+                                    >
+                                        <Trash2 size={18} />
+                                    </Button>
+                                )}
                             </CardHeader>
 
                             <CardContent className="p-5">
                                 <div className="flex flex-wrap gap-4">
-                                    {/* ✅ 渲染產品卡片 */}
                                     {productIds.map((pid: string) => (
                                         <ProductDetailCard 
                                             key={pid} 
@@ -169,7 +194,7 @@ export default function ProductSectionManager({ form }: { form: UseFormReturn<Ne
                                         />
                                     ))}
 
-                                    {/* 勾選按鈕卡片 */}
+                                    {/* 勾選按鈕卡片：始終保留，讓產品部能勾選 */}
                                     <button
                                         type="button"
                                         onClick={() => { 
@@ -194,11 +219,9 @@ export default function ProductSectionManager({ form }: { form: UseFormReturn<Ne
                 open={selectorOpen}
                 onOpenChange={setSelectorOpen}
                 mode={mode}
-                // ✅ 傳入當前選中的 ID
                 selectedIds={currentSelectedIds}
                 onConfirm={(newIds: string[]) => {
                     if (activeIndex !== null) {
-                        // ✅ 更新 React Hook Form 狀態
                         form.setValue(`products.${activeIndex}.productIds`, newIds, { 
                             shouldDirty: true, 
                             shouldValidate: true 

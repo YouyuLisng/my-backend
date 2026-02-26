@@ -40,6 +40,7 @@ import {
     ExternalLink,
     ChevronDown,
     Image as ImageIcon,
+    Lock,
 } from 'lucide-react';
 import { NewPage } from '@prisma/client';
 
@@ -71,8 +72,11 @@ import {
 import { useLoadingStore } from '@/stores/useLoadingStore';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 
+// 定義角色權限
+type Role = 'DEV' | 'PLANNING' | 'PRODUCT';
+
 // --- 1. 定義可拖曳的 Row 元件 ---
-const DraggableRow = ({ row }: { row: Row<NewPage> }) => {
+const DraggableRow = ({ row, canDrag }: { row: Row<NewPage>; canDrag: boolean }) => {
     const {
         attributes,
         listeners,
@@ -82,6 +86,7 @@ const DraggableRow = ({ row }: { row: Row<NewPage> }) => {
         isDragging,
     } = useSortable({
         id: row.original.id,
+        disabled: !canDrag, // ✅ 如果是產品部則禁用拖曳排序
     });
 
     const style = {
@@ -111,9 +116,9 @@ const DraggableRow = ({ row }: { row: Row<NewPage> }) => {
                     >
                         {isDragColumn ? (
                             <div
-                                {...attributes}
-                                {...listeners}
-                                className="cursor-grab hover:text-primary flex justify-center items-center w-8 h-8 rounded-md hover:bg-accent"
+                                {...(canDrag ? attributes : {})}
+                                {...(canDrag ? listeners : {})}
+                                className={`${canDrag ? 'cursor-grab hover:text-primary' : 'cursor-not-allowed opacity-20'} flex justify-center items-center w-8 h-8 rounded-md hover:bg-accent`}
                             >
                                 {flexRender(
                                     cell.column.columnDef.cell,
@@ -137,11 +142,13 @@ const DraggableRow = ({ row }: { row: Row<NewPage> }) => {
 interface PageActionsCellProps {
     page: NewPage;
     onDeleteClick: (id: string) => void;
+    isProduct: boolean;
 }
 
 const PageActionsCell = ({
     page,
     onDeleteClick,
+    isProduct,
 }: PageActionsCellProps) => {
     return (
         <>
@@ -156,16 +163,23 @@ const PageActionsCell = ({
                     <DropdownMenuLabel>操作</DropdownMenuLabel>
                     <DropdownMenuItem asChild>
                         <Link href={`/cms/new-pages/${page.id}`}>
-                            <Pencil className="mr-2 h-4 w-4" /> 編輯
+                            <Pencil className="mr-2 h-4 w-4" /> 
+                            {isProduct ? '配置產品' : '編輯內容'}
                         </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        className="text-red-600 focus:text-red-600"
-                        onClick={() => onDeleteClick(page.id)}
-                    >
-                        <Trash2 className="mr-2 h-4 w-4" /> 刪除
-                    </DropdownMenuItem>
+                    
+                    {/* ✅ 非產品部才顯示刪除選項 */}
+                    {!isProduct && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                className="text-red-600 focus:text-red-600"
+                                onClick={() => onDeleteClick(page.id)}
+                            >
+                                <Trash2 className="mr-2 h-4 w-4" /> 刪除
+                            </DropdownMenuItem>
+                        </>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
         </>
@@ -175,13 +189,19 @@ const PageActionsCell = ({
 // --- 3. 主組件 ---
 interface NewPageDataTableProps {
     data: NewPage[];
+    userRole?: Role; // ✅ 新增：接收使用者角色
 }
 
 export function NewPageDataTable({
     data: initialData,
+    userRole = 'PRODUCT', // 預設為最嚴格的產品部權限
 }: NewPageDataTableProps) {
     const [data, setData] = React.useState(initialData);
     const { show, hide } = useLoadingStore();
+
+    // 權限判定
+    const isProduct = userRole === 'PRODUCT';
+    const canManagePage = !isProduct; // 是否能建立、刪除或切換狀態
 
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [deleteId, setDeleteId] = React.useState<string | null>(null);
@@ -205,6 +225,8 @@ export function NewPageDataTable({
     };
 
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+        if (isProduct) return; // 權限攔截
+
         setData((prev) =>
             prev.map((item) =>
                 item.id === id ? { ...item, enabled: !currentStatus } : item
@@ -214,21 +236,16 @@ export function NewPageDataTable({
         try {
             const result = await toggleNewPageStatus(id, currentStatus);
             if (!result.success) {
-                toast.error('更新失敗', {
-                    description: result.message,
-                });
+                toast.error('更新失敗', { description: result.message });
                 setData((prev) =>
                     prev.map((item) =>
-                        item.id === id
-                            ? { ...item, enabled: currentStatus }
-                            : item
+                        item.id === id ? { ...item, enabled: currentStatus } : item
                     )
                 );
             } else {
                 toast.success('狀態已更新');
             }
         } catch (error) {
-            console.error(error);
             setData((prev) =>
                 prev.map((item) =>
                     item.id === id ? { ...item, enabled: currentStatus } : item
@@ -241,12 +258,13 @@ export function NewPageDataTable({
     };
 
     const handleDeleteClick = (id: string) => {
+        if (isProduct) return;
         setDeleteId(id);
         setDeleteDialogOpen(true);
     };
 
     const confirmDelete = async () => {
-        if (!deleteId) return;
+        if (!deleteId || isProduct) return;
 
         setDeleteDialogOpen(false);
         show();
@@ -260,7 +278,6 @@ export function NewPageDataTable({
                 toast.error('刪除失敗');
             }
         } catch (error) {
-            console.error(error);
             toast.error('發生錯誤');
         } finally {
             hide();
@@ -270,12 +287,11 @@ export function NewPageDataTable({
 
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
     );
 
     const handleDragEnd = async (event: DragEndEvent) => {
+        if (isProduct) return;
         const { active, over } = event;
         if (!over || active.id === over.id) return;
 
@@ -285,7 +301,7 @@ export function NewPageDataTable({
         if (oldIndex !== -1 && newIndex !== -1) {
             const newData = arrayMove(data, oldIndex, newIndex);
             setData(newData);
-            toast.info("排序功能已在前端更新");
+            toast.info("排序已更新");
         }
     };
 
@@ -314,6 +330,7 @@ export function NewPageDataTable({
                                     fill
                                     className="object-cover"
                                     sizes="80px"
+                                    unoptimized // 👈 暫時加入，避免網域未設定錯誤
                                 />
                             ) : (
                                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -357,17 +374,13 @@ export function NewPageDataTable({
                 accessorKey: 'enabled',
                 header: '啟用狀態',
                 size: 80,
-                cell: ({ row }) => {
-                    const enabled = row.getValue('enabled') as boolean;
-                    return (
-                        <Switch
-                            checked={enabled}
-                            onCheckedChange={() =>
-                                handleToggleStatus(row.original.id, enabled)
-                            }
-                        />
-                    );
-                },
+                cell: ({ row }) => (
+                    <Switch
+                        checked={row.getValue('enabled') as boolean}
+                        disabled={isProduct} // ✅ 產品部不可操作
+                        onCheckedChange={() => handleToggleStatus(row.original.id, row.getValue('enabled'))}
+                    />
+                ),
             },
             {
                 id: 'actions',
@@ -377,11 +390,12 @@ export function NewPageDataTable({
                     <PageActionsCell
                         page={row.original}
                         onDeleteClick={handleDeleteClick}
+                        isProduct={isProduct}
                     />
                 ),
             },
         ],
-        []
+        [isProduct]
     );
 
     const table = useReactTable({
@@ -393,11 +407,7 @@ export function NewPageDataTable({
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
         onColumnVisibilityChange: setColumnVisibility,
-        state: {
-            sorting,
-            columnFilters,
-            columnVisibility,
-        },
+        state: { sorting, columnFilters, columnVisibility },
         getRowId: (row) => row.id,
     });
 
@@ -406,12 +416,8 @@ export function NewPageDataTable({
             <div className="flex items-center gap-2">
                 <Input
                     placeholder="搜尋標題..."
-                    value={
-                        (table.getColumn('title')?.getFilterValue() as string) ?? ''
-                    }
-                    onChange={(event) =>
-                        table.getColumn('title')?.setFilterValue(event.target.value)
-                    }
+                    value={(table.getColumn('title')?.getFilterValue() as string) ?? ''}
+                    onChange={(event) => table.getColumn('title')?.setFilterValue(event.target.value)}
                     className="max-w-sm"
                 />
 
@@ -422,86 +428,58 @@ export function NewPageDataTable({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        {table
-                            .getAllColumns()
-                            .filter((column) => column.getCanHide())
-                            .map((column) => {
-                                return (
-                                    <DropdownMenuCheckboxItem
-                                        key={column.id}
-                                        className="capitalize"
-                                        checked={column.getIsVisible()}
-                                        onCheckedChange={(value) =>
-                                            column.toggleVisibility(!!value)
-                                        }
-                                    >
-                                        {column.id === 'mainImage' ? '主圖' :
-                                         column.id === 'title' ? '標題' : 
-                                         column.id === 'slug' ? '路徑' : 
-                                         column.id === 'enabled' ? '狀態' : column.id}
-                                    </DropdownMenuCheckboxItem>
-                                );
-                            })}
+                        {table.getAllColumns().filter((column) => column.getCanHide()).map((column) => (
+                            <DropdownMenuCheckboxItem
+                                key={column.id}
+                                className="capitalize"
+                                checked={column.getIsVisible()}
+                                onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                            >
+                                {column.id === 'mainImage' ? '主圖' :
+                                 column.id === 'title' ? '標題' : 
+                                 column.id === 'slug' ? '路徑' : 
+                                 column.id === 'enabled' ? '狀態' : column.id}
+                            </DropdownMenuCheckboxItem>
+                        ))}
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button asChild>
-                    <Link href="/cms/new-pages/create">新增活動頁</Link>
-                </Button>
+                {/* ✅ 權限控制：只有非產品部可以建立 */}
+                {!isProduct ? (
+                    <Button asChild>
+                        <Link href="/cms/new-pages/create">新增活動頁</Link>
+                    </Button>
+                ) : (
+                    <div className="flex items-center gap-2 px-3 py-2 border border-dashed rounded-md text-slate-400 bg-slate-50 text-sm">
+                        <Lock size={14} />
+                        權限受限
+                    </div>
+                )}
             </div>
 
-            <div className="rounded-md border">
-                <DndContext
-                    id={dndContextId}
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
+            <div className="rounded-md border bg-white overflow-hidden shadow-sm">
+                <DndContext id={dndContextId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <Table>
                         <TableHeader>
                             {table.getHeaderGroups().map((headerGroup) => (
                                 <TableRow key={headerGroup.id}>
                                     {headerGroup.headers.map((header) => (
-                                        <TableHead
-                                            key={header.id}
-                                            style={{
-                                                width:
-                                                    header.column.getSize() !== 150
-                                                        ? header.column.getSize()
-                                                        : undefined,
-                                            }}
-                                        >
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                      header.column.columnDef.header,
-                                                      header.getContext()
-                                                  )}
+                                        <TableHead key={header.id} style={{ width: header.column.getSize() !== 150 ? header.column.getSize() : undefined }}>
+                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                         </TableHead>
                                     ))}
                                 </TableRow>
                             ))}
                         </TableHeader>
                         <TableBody>
-                            <SortableContext
-                                items={table.getRowModel().rows.map((row) => row.original.id)}
-                                strategy={verticalListSortingStrategy}
-                            >
+                            <SortableContext items={table.getRowModel().rows.map((row) => row.original.id)} strategy={verticalListSortingStrategy}>
                                 {table.getRowModel().rows?.length ? (
                                     table.getRowModel().rows.map((row) => (
-                                        <DraggableRow
-                                            key={row.id}
-                                            row={row}
-                                        />
+                                        <DraggableRow key={row.id} row={row} canDrag={canManagePage} />
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell
-                                            colSpan={columns.length}
-                                            className="h-24 text-center"
-                                        >
-                                            暫無資料
-                                        </TableCell>
+                                        <TableCell colSpan={columns.length} className="h-24 text-center">暫無資料</TableCell>
                                     </TableRow>
                                 )}
                             </SortableContext>
@@ -511,28 +489,13 @@ export function NewPageDataTable({
             </div>
 
             <div className="flex items-center justify-between space-x-2 py-4">
-                <div className="text-sm text-muted-foreground">
-                    總共 {table.getFilteredRowModel().rows.length} 筆資料
-                </div>
+                <div className="text-sm text-muted-foreground">總共 {table.getFilteredRowModel().rows.length} 筆資料</div>
                 <div className="space-x-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.previousPage()}
-                        disabled={!table.getCanPreviousPage()}
-                    >
-                        上一頁
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => table.nextPage()}
-                        disabled={!table.getCanNextPage()}
-                    >
-                        下一頁
-                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>上一頁</Button>
+                    <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>下一頁</Button>
                 </div>
             </div>
+            
             <ConfirmDialog
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
