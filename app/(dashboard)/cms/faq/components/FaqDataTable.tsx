@@ -59,7 +59,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 
 // Server Actions
 import {
@@ -183,14 +183,12 @@ interface FaqDataTableProps {
 
 export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
     const [data, setData] = React.useState(initialData);
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast();
     const { show, hide } = useLoadingStore();
 
-    // 控制刪除確認對話框
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
-    // --- Table States ---
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -215,19 +213,17 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
             const result = await toggleFaqStatus(id, currentStatus);
 
             if (!result.success) {
-                toast({
-                    variant: 'destructive',
-                    title: '更新失敗',
+                // ✅ 改用 Sonner 語法
+                toast.error('更新失敗', {
                     description: result.error,
                 });
-                // 失敗則還原
                 setData((prev) =>
                     prev.map((item) =>
                         item.id === id ? { ...item, isActive: currentStatus } : item
                     )
                 );
             } else {
-                toast({ title: '狀態已更新' });
+                toast.success('狀態已更新');
             }
         } catch (error) {
             console.error(error);
@@ -236,19 +232,17 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
                     item.id === id ? { ...item, isActive: currentStatus } : item
                 )
             );
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
         }
     };
 
-    // --- Step 1: 點擊刪除按鈕 ---
     const handleDeleteClick = (id: string) => {
         setDeleteId(id);
         setDeleteDialogOpen(true);
     };
 
-    // --- Step 2: 真正執行刪除 ---
     const confirmDelete = async () => {
         if (!deleteId) return;
 
@@ -256,23 +250,22 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
         show();
 
         try {
-            const result = await deleteFaq(deleteId); // ✅ 修改：呼叫 deleteFaq
+            const result = await deleteFaq(deleteId);
             if (result.success) {
-                toast({ title: '刪除成功' });
+                toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                toast({ variant: 'destructive', title: '刪除失敗' });
+                toast.error('刪除失敗');
             }
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
             setDeleteId(null);
         }
     };
 
-    // DnD Sensors
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor, {
@@ -280,7 +273,6 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
         })
     );
 
-    // --- Actions: 拖曳排序 ---
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -292,24 +284,20 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
             const newData = arrayMove(data, oldIndex, newIndex);
             setData(newData);
 
-            // 若沒有過濾條件才執行後端排序更新
             if (columnFilters.length === 0) {
                 show();
                 try {
                     const idList = newData.map((item) => item.id);
-                    const result = await reorderFaqs(idList); // ✅ 修改：呼叫 reorderFaqs
+                    const result = await reorderFaqs(idList);
 
                     if (!result.success) {
-                        toast({
-                            variant: 'destructive',
-                            title: '排序更新失敗',
-                        });
+                        toast.error('排序更新失敗');
                         setData(initialData);
                     }
                 } catch (error) {
                     console.error(error);
                     setData(initialData);
-                    toast({ variant: 'destructive', title: '發生錯誤' });
+                    toast.error('發生錯誤');
                 } finally {
                     hide();
                 }
@@ -317,7 +305,6 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
         }
     };
 
-    // --- Columns 定義 ---
     const columns = React.useMemo<ColumnDef<Faq>[]>(
         () => [
             {
@@ -413,7 +400,6 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
 
     return (
         <div className="space-y-4">
-            {/* 頂部工具列 */}
             <div className="flex items-center gap-2">
                 <Input
                     placeholder="搜尋問題..."
@@ -462,7 +448,6 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
                 />
             </div>
 
-            {/* 表格區塊 */}
             <div className="rounded-md border">
                 <DndContext
                     id={dndContextId}
@@ -527,7 +512,6 @@ export function FaqDataTable({ data: initialData }: FaqDataTableProps) {
                 </DndContext>
             </div>
 
-            {/* 底部：分頁與統計 */}
             <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="text-sm text-muted-foreground">
                     總共 {table.getFilteredRowModel().rows.length} 筆資料

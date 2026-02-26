@@ -62,7 +62,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 確認使用 sonner
 
 // Server Actions
 import { deleteAd, toggleAdStatus, reorderAds } from '../actions/ad';
@@ -183,7 +183,6 @@ interface AdTableProps {
 
 export function AdTable({ data: initialData }: AdTableProps) {
     const [data, setData] = React.useState(initialData);
-    const { toast } = useToast();
     const { show, hide } = useLoadingStore();
 
     // 刪除確認對話框狀態
@@ -211,7 +210,7 @@ export function AdTable({ data: initialData }: AdTableProps) {
         if (url.startsWith('http://') || url.startsWith('https://')) {
             return url;
         }
-        const baseUrl = 'https://dts-iota.vercel.app';
+        const baseUrl = 'https://www.dtsgroup.com.tw';
         const path = url.startsWith('/') ? url : `/${url}`;
         return `${baseUrl}${path}`;
     };
@@ -231,9 +230,8 @@ export function AdTable({ data: initialData }: AdTableProps) {
             const result = await toggleAdStatus(id, currentStatus);
 
             if (!result.success) {
-                toast({
-                    variant: 'destructive',
-                    title: '更新失敗',
+                // ✅ 改用 Sonner 語法
+                toast.error('更新失敗', {
                     description: result.error,
                 });
                 // Revert
@@ -245,7 +243,7 @@ export function AdTable({ data: initialData }: AdTableProps) {
                     )
                 );
             } else {
-                toast({ title: '狀態已更新' });
+                toast.success('狀態已更新');
             }
         } catch (error) {
             console.error(error);
@@ -255,7 +253,7 @@ export function AdTable({ data: initialData }: AdTableProps) {
                     item.id === id ? { ...item, isActive: currentStatus } : item
                 )
             );
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
         }
@@ -277,14 +275,14 @@ export function AdTable({ data: initialData }: AdTableProps) {
         try {
             const result = await deleteAd(deleteId);
             if (result.success) {
-                toast({ title: '刪除成功' });
+                toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                toast({ variant: 'destructive', title: '刪除失敗' });
+                toast.error('刪除失敗');
             }
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
             setDeleteId(null);
@@ -318,16 +316,13 @@ export function AdTable({ data: initialData }: AdTableProps) {
                     const result = await reorderAds(idList);
 
                     if (!result.success) {
-                        toast({
-                            variant: 'destructive',
-                            title: '排序更新失敗',
-                        });
+                        toast.error('排序更新失敗');
                         setData(initialData);
                     }
                 } catch (error) {
                     console.error(error);
                     setData(initialData);
-                    toast({ variant: 'destructive', title: '發生錯誤' });
+                    toast.error('發生錯誤');
                 } finally {
                     hide();
                 }
@@ -396,7 +391,6 @@ export function AdTable({ data: initialData }: AdTableProps) {
                             </span>
                         );
                     
-                    // ✅ 使用 getDisplayUrl 取得完整網址
                     const displayUrl = getDisplayUrl(rawUrl);
 
                     return (
@@ -405,7 +399,7 @@ export function AdTable({ data: initialData }: AdTableProps) {
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-1 text-sm text-blue-600 hover:underline max-w-[200px]"
-                            title={displayUrl} // 滑鼠移上去顯示完整網址
+                            title={displayUrl}
                         >
                             <span className="truncate">{displayUrl}</span>
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />

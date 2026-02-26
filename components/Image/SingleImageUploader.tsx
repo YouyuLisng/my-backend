@@ -2,7 +2,7 @@
 
 import React, { useId, useCallback } from 'react';
 import ImageUploader, { ImageItem } from './ImageUploader';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import { deleteFromVercelBlob } from '@/lib/deleteFromVercelBlob';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -26,17 +26,19 @@ export default function SingleImageUploader({
     error,
 }: SingleImageUploaderProps) {
     const uploaderId = useId();
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
 
     const handleDelete = useCallback(async (url: string) => {
         try {
             await deleteFromVercelBlob(url);
             onChange(undefined);
-            toast({ title: '圖片已移除', duration: 1500 });
+            // ✅ Sonner 語法
+            toast.success('圖片已移除');
         } catch (err: any) {
-            toast({ variant: 'destructive', title: '移除失敗', description: '請重試' });
+            // ✅ Sonner 語法
+            toast.error('移除失敗', { description: '請重試' });
         }
-    }, [onChange, toast]);
+    }, [onChange]);
 
     const currentValue: ImageItem[] = value
         ? [{ url: value, name: value.split('/').pop() || '圖片' }]
@@ -53,7 +55,7 @@ export default function SingleImageUploader({
                 </Label>
             )}
             
-            {/* 只保留這一層外框，移除內部所有 ImageUploader 的線條 */}
+            {/* 只保留這一層外框 */}
             <div className={cn(
                 "relative rounded-xl border-2 transition-all duration-200 min-h-[140px] flex flex-col items-center justify-center",
                 !value && !error && "border-dashed border-slate-200 bg-slate-50/30 hover:bg-blue-50/50 hover:border-blue-300",
@@ -77,7 +79,6 @@ export default function SingleImageUploader({
                         maxCount={1}
                         requiredSize={requiredSize}
                         showPrimaryButton={false}
-                        // 這裡傳入自定義 Class 來強制取消內部線框
                         className="border-none bg-transparent shadow-none"
                     />
                 </div>

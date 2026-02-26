@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import Image from 'next/image';
-import Link from 'next/link'; // ✅ 引入 Link
+import Link from 'next/link'; 
 import {
     flexRender,
     getCoreRowModel,
@@ -20,7 +20,7 @@ import {
     Trash2,
     ChevronDown,
     Image as ImageIcon,
-    Eye, // ✅ 引入 Eye 圖標
+    Eye, 
 } from 'lucide-react';
 import { Module } from '@prisma/client'; 
 
@@ -44,7 +44,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 
 import {
     deleteModule,
@@ -82,7 +82,6 @@ const ModuleActionsCell = ({ module, onDeleteClick }: ModuleActionsCellProps) =>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>操作</DropdownMenuLabel>
                     
-                    {/* ✅ 新增：查看按鈕 */}
                     <DropdownMenuItem asChild>
                         <Link href={`/admin/modules/${module.id}/cards`} className="cursor-pointer">
                             <Eye className="mr-2 h-4 w-4" /> 查看卡片列表
@@ -113,9 +112,8 @@ interface ModuleDataTableProps {
 }
 
 export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
-    // ... (這部分的程式碼與原本相同，不變)
     const [data, setData] = React.useState(initialData);
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     const { show, hide } = useLoadingStore();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -142,9 +140,8 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
             const result = await toggleModuleStatus(id, currentStatus);
 
             if (!result.success) {
-                toast({
-                    variant: 'destructive',
-                    title: '更新失敗',
+                // ✅ Sonner 語法
+                toast.error('更新失敗', {
                     description: result.error,
                 });
                 setData((prev) =>
@@ -153,7 +150,8 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
                     )
                 );
             } else {
-                toast({ title: '狀態已更新' });
+                // ✅ Sonner 語法
+                toast.success('狀態已更新');
             }
         } catch (error) {
             console.error(error);
@@ -162,7 +160,7 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
                     item.id === id ? { ...item, isActive: currentStatus } : item
                 )
             );
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
         }
@@ -182,21 +180,22 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
         try {
             const result = await deleteModule(deleteId);
             if (result.success) {
-                toast({ title: '刪除成功' });
+                // ✅ Sonner 語法
+                toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                toast({ variant: 'destructive', title: '刪除失敗' });
+                // ✅ Sonner 語法
+                toast.error('刪除失敗');
             }
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
             setDeleteId(null);
         }
     };
 
-    // --- Columns 定義 ---
     const columns = React.useMemo<ColumnDef<Module>[]>(
         () => [
             {
@@ -305,7 +304,6 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
 
     return (
         <div className="space-y-4">
-            {/* 頂部工具列 */}
             <div className="flex items-center gap-2">
                 <Input
                     placeholder="搜尋標題..."
@@ -338,7 +336,6 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
                                             column.toggleVisibility(!!value)
                                         }
                                     >
-                                        {/* (略) 欄位名稱對應 ... */}
                                         {column.id === 'icon' ? '圖示' : 
                                          column.id === 'title' ? '標題' : 
                                          column.id === 'description' ? '描述' :
@@ -358,7 +355,6 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
                 />
             </div>
 
-            {/* 表格區塊 */}
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
@@ -416,7 +412,6 @@ export function ModuleDataTable({ data: initialData }: ModuleDataTableProps) {
                 </Table>
             </div>
 
-            {/* 底部：分頁 */}
             <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="text-sm text-muted-foreground">
                     總共 {table.getFilteredRowModel().rows.length} 筆資料

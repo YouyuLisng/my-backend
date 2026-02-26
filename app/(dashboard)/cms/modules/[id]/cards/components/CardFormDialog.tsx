@@ -37,7 +37,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 
 interface Props {
     initialData?: Card | null;
@@ -58,7 +58,8 @@ export default function CardFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen,
 }: Props) {
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
+
     // 內部狀態管理
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
@@ -80,13 +81,9 @@ export default function CardFormDialog({
     const isWorldTravel = moduleTitle === '其他區塊';
     const isKaohsiungTour = moduleTitle === '服務專區';
 
-    // 只要符合這三種模組之一，就隱藏 描述、價格、標籤
     const shouldHideFields = isThemeTravel || isWorldTravel || isKaohsiungTour;
-
     const showDescription = !shouldHideFields;
     const showPrice = !shouldHideFields;
-    
-    // 標籤還要額外對 ClassicTour 隱藏
     const showTags = !shouldHideFields && !isClassicTour;
 
     // 1. 初始化 Form
@@ -107,6 +104,7 @@ export default function CardFormDialog({
             gaLabel: '',
         },
     });
+
     useEffect(() => {
         if (isOpen) {
             form.reset({
@@ -151,12 +149,12 @@ export default function CardFormDialog({
                 }
 
                 if (result.success) {
-                    toast({ title: '操作成功', description: result.message });
+                    // ✅ Sonner 語法
+                    toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    toast({
-                        variant: 'destructive',
-                        title: '操作失敗',
+                    // ✅ Sonner 語法
+                    toast.error('操作失敗', {
                         description: result.message || '請檢查欄位',
                     });
                     if (result.errors) {
@@ -165,9 +163,8 @@ export default function CardFormDialog({
                 }
             } catch (err) {
                 console.error(err);
-                toast({
-                    variant: 'destructive',
-                    title: '發生錯誤',
+                // ✅ Sonner 語法
+                toast.error('發生錯誤', {
                     description: '請稍後再試',
                 });
             }
@@ -200,7 +197,6 @@ export default function CardFormDialog({
                                     <h3 className="font-semibold text-base border-l-4 border-primary pl-2 mb-4">
                                         基本資訊
                                     </h3>
-                                    {/* 標題 (必填，永遠顯示) */}
                                     <FormField
                                         control={form.control}
                                         name="title"
@@ -232,10 +228,7 @@ export default function CardFormDialog({
                                                     <FormControl>
                                                         <Textarea
                                                             {...field}
-                                                            value={
-                                                                field.value ||
-                                                                ''
-                                                            }
+                                                            value={field.value || ''}
                                                             placeholder="簡短描述..."
                                                             disabled={isPending}
                                                             className="resize-none h-20"
@@ -247,7 +240,6 @@ export default function CardFormDialog({
                                         />
                                     )}
 
-                                    {/* 連結 (必填，永遠顯示) */}
                                     <FormField
                                         control={form.control}
                                         name="href"
@@ -268,7 +260,6 @@ export default function CardFormDialog({
                                         )}
                                     />
 
-                                    {/* ✅ 條件渲染：價格 */}
                                     {showPrice && (
                                         <FormField
                                             control={form.control}
@@ -281,10 +272,7 @@ export default function CardFormDialog({
                                                     <FormControl>
                                                         <Input
                                                             {...field}
-                                                            value={
-                                                                field.value ||
-                                                                ''
-                                                            }
+                                                            value={field.value || ''}
                                                             placeholder="例如：$29,900 起"
                                                             disabled={isPending}
                                                         />
@@ -295,7 +283,6 @@ export default function CardFormDialog({
                                         />
                                     )}
 
-                                    {/* ✅ 條件渲染：標籤 */}
                                     {showTags && mounted && (
                                         <FormField
                                             control={form.control}
@@ -310,13 +297,8 @@ export default function CardFormDialog({
                                                             instanceId="card-tags-select"
                                                             placeholder="輸入標籤並按 Enter..."
                                                             options={[]}
-                                                            value={
-                                                                field.value ||
-                                                                []
-                                                            }
-                                                            onChange={
-                                                                field.onChange
-                                                            }
+                                                            value={field.value || []}
+                                                            onChange={field.onChange}
                                                         />
                                                     </FormControl>
                                                     <FormDescription>
@@ -337,12 +319,8 @@ export default function CardFormDialog({
                                                 </FormLabel>
                                                 <FormControl>
                                                     <SingleImageUploader
-                                                        value={
-                                                            field.value || ''
-                                                        }
-                                                        onChange={
-                                                            field.onChange
-                                                        }
+                                                        value={field.value || ''}
+                                                        onChange={field.onChange}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -350,7 +328,7 @@ export default function CardFormDialog({
                                         )}
                                     />
                                 </div>
-                                {/* === 右欄：狀態與 GA (永遠顯示) === */}
+                                {/* === 右欄：狀態與 GA === */}
                                 <div className="space-y-6">
                                     <div>
                                         <h3 className="font-semibold text-base border-l-4 border-gray-500 pl-2 mb-4">
@@ -371,12 +349,8 @@ export default function CardFormDialog({
                                                     </div>
                                                     <FormControl>
                                                         <Switch
-                                                            checked={
-                                                                field.value
-                                                            }
-                                                            onCheckedChange={
-                                                                field.onChange
-                                                            }
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
                                                             disabled={isPending}
                                                         />
                                                     </FormControl>
@@ -397,20 +371,13 @@ export default function CardFormDialog({
                                                 name="gaEvent"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>
-                                                            Event Type
-                                                        </FormLabel>
+                                                        <FormLabel>Event Type</FormLabel>
                                                         <FormControl>
                                                             <Input
                                                                 {...field}
-                                                                value={
-                                                                    field.value ||
-                                                                    ''
-                                                                }
+                                                                value={field.value || ''}
                                                                 placeholder="ga-click"
-                                                                disabled={
-                                                                    isPending
-                                                                }
+                                                                disabled={isPending}
                                                             />
                                                         </FormControl>
                                                         <FormDescription className="text-xs text-muted-foreground">
@@ -424,20 +391,13 @@ export default function CardFormDialog({
                                                 name="gaEventName"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>
-                                                            Event Name
-                                                        </FormLabel>
+                                                        <FormLabel>Event Name</FormLabel>
                                                         <FormControl>
                                                             <Input
                                                                 {...field}
-                                                                value={
-                                                                    field.value ||
-                                                                    ''
-                                                                }
+                                                                value={field.value || ''}
                                                                 placeholder="card_click"
-                                                                disabled={
-                                                                    isPending
-                                                                }
+                                                                disabled={isPending}
                                                             />
                                                         </FormControl>
                                                     </FormItem>
@@ -448,20 +408,13 @@ export default function CardFormDialog({
                                                 name="gaCategory"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>
-                                                            Category
-                                                        </FormLabel>
+                                                        <FormLabel>Category</FormLabel>
                                                         <FormControl>
                                                             <Input
                                                                 {...field}
-                                                                value={
-                                                                    field.value ||
-                                                                    ''
-                                                                }
+                                                                value={field.value || ''}
                                                                 placeholder="Card"
-                                                                disabled={
-                                                                    isPending
-                                                                }
+                                                                disabled={isPending}
                                                             />
                                                         </FormControl>
                                                     </FormItem>
@@ -472,20 +425,13 @@ export default function CardFormDialog({
                                                 name="gaLabel"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>
-                                                            Label
-                                                        </FormLabel>
+                                                        <FormLabel>Label</FormLabel>
                                                         <FormControl>
                                                             <Input
                                                                 {...field}
-                                                                value={
-                                                                    field.value ||
-                                                                    ''
-                                                                }
+                                                                value={field.value || ''}
                                                                 placeholder="Tokyo Tour"
-                                                                disabled={
-                                                                    isPending
-                                                                }
+                                                                disabled={isPending}
                                                             />
                                                         </FormControl>
                                                     </FormItem>

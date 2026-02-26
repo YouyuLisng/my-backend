@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ChangeEvent, useCallback, useId, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import {
     DndContext,
     closestCenter,
@@ -40,14 +40,15 @@ export default function PDFUploader({
     maxCount = 10,
 }: Props) {
     const { show, hide } = useLoadingStore();
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
+    
     const [isUploading, setIsUploading] = useState(false);
 
     const uploaderId = useId();
     const inputId = id || uploaderId;
 
     /* ----------------------------
-       📤 上傳 PDF
+        📤 上傳 PDF
     ---------------------------- */
     const uploadSinglePDF = useCallback(
         async (file: File): Promise<PDFItem | null> => {
@@ -62,19 +63,18 @@ export default function PDFUploader({
                 const { url } = await res.json();
                 return { url, name: file.name };
             } catch (err) {
-                toast({
-                    variant: 'destructive',
-                    title: '上傳失敗',
+                // ✅ Sonner 語法
+                toast.error('上傳失敗', {
                     description: `${file.name} 上傳時發生問題`,
                 });
                 return null;
             }
         },
-        [toast]
+        []
     );
 
     /* ----------------------------
-       🗑 刪除 Vercel Blob
+        🗑 刪除 Vercel Blob
     ---------------------------- */
     const deleteOldPDF = useCallback(async (url: string) => {
         try {
@@ -85,7 +85,7 @@ export default function PDFUploader({
     }, []);
 
     /* ----------------------------
-       📥 處理 PDF 上傳
+        📥 處理 PDF 上傳
     ---------------------------- */
     const handleFileInput = async (e: ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -105,18 +105,16 @@ export default function PDFUploader({
 
         for (const file of files) {
             if (file.type !== 'application/pdf') {
-                toast({
-                    variant: 'destructive',
-                    title: '格式錯誤',
+                // ✅ Sonner 語法
+                toast.error('格式錯誤', {
                     description: `${file.name} 不是 PDF`,
                 });
                 continue;
             }
 
             if (file.size / 1024 / 1024 > 50) {
-                toast({
-                    variant: 'destructive',
-                    title: '檔案過大',
+                // ✅ Sonner 語法
+                toast.error('檔案過大', {
                     description: `${file.name} 超過 50MB`,
                 });
                 continue;
@@ -130,8 +128,8 @@ export default function PDFUploader({
             const newList = [...current, ...uploaded].slice(0, maxCount);
             onChange(newList);
 
-            toast({
-                title: '上傳完成',
+            // ✅ Sonner 語法
+            toast.success('上傳完成', {
                 description: `成功上傳 ${uploaded.length} 份 PDF`,
             });
         }
@@ -142,7 +140,7 @@ export default function PDFUploader({
     };
 
     /* ----------------------------
-       ↕ 拖曳排序設定
+        ↕ 拖曳排序設定
     ---------------------------- */
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -160,7 +158,7 @@ export default function PDFUploader({
     };
 
     /* ----------------------------
-       🖼 PDF 列表渲染（含 PDF ICON）
+        🖼 PDF 列表渲染
     ---------------------------- */
     return (
         <div className="space-y-4">

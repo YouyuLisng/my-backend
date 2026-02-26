@@ -17,7 +17,7 @@ import {
 import { getNewPages, deleteNewPage } from './actions/newPage';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import {
     Table,
     TableBody,
@@ -37,7 +37,8 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function NewPagesListPage() {
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
+    
     const [pages, setPages] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -50,7 +51,8 @@ export default function NewPagesListPage() {
             if (res.success) {
                 setPages(res.data || []);
             } else {
-                toast({ variant: 'destructive', title: '載入失敗', description: res.message });
+                // ✅ Sonner 語法
+                toast.error('載入失敗', { description: res.message });
             }
         } finally {
             setLoading(false);
@@ -67,10 +69,12 @@ export default function NewPagesListPage() {
         
         const res = await deleteNewPage(id);
         if (res.success) {
-            toast({ title: '刪除成功', description: '該頁面已從系統中移除' });
+            // ✅ Sonner 語法
+            toast.success('刪除成功', { description: '該頁面已從系統中移除' });
             loadData();
         } else {
-            toast({ variant: 'destructive', title: '刪除失敗', description: res.message });
+            // ✅ Sonner 語法
+            toast.error('刪除失敗', { description: res.message });
         }
     };
 

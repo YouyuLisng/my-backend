@@ -36,7 +36,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 import { cn } from '@/lib/utils';
 
@@ -55,7 +55,7 @@ export default function ModuleFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
@@ -109,17 +109,18 @@ export default function ModuleFormDialog({
                 }
 
                 if (result.success) {
-                    toast({ title: '操作成功', description: result.message });
+                    // ✅ Sonner 語法
+                    toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    toast({ 
-                        variant: "destructive",
-                        title: '操作失敗', 
+                    // ✅ Sonner 語法
+                    toast.error('操作失敗', { 
                         description: result.message || '請檢查輸入欄位' 
                     });
                 }
             } catch (err) {
-                toast({ variant: 'destructive', title: '發生錯誤', description: '請稍後再試' });
+                // ✅ Sonner 語法
+                toast.error('發生錯誤', { description: '請稍後再試' });
             }
         });
     };

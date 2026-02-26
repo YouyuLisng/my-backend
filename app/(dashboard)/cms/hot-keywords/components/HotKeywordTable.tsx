@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Image from 'next/image';
 import {
     flexRender,
     getCoreRowModel,
@@ -60,7 +61,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import {
     deleteHotKeyword,
     toggleHotKeywordStatus,
@@ -186,14 +187,12 @@ export function HotKeywordDataTable({
     data: initialData,
 }: HotKeywordDataTableProps) {
     const [data, setData] = React.useState(initialData);
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     const { show, hide } = useLoadingStore();
 
-    // 刪除對話框狀態
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
-    // --- Table States ---
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] =
         React.useState<ColumnFiltersState>([]);
@@ -206,7 +205,6 @@ export function HotKeywordDataTable({
         setData(initialData);
     }, [initialData]);
 
-    // ✅ 新增：處理網址顯示邏輯
     const getDisplayUrl = (url: string) => {
         if (!url) return '';
         if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -217,7 +215,6 @@ export function HotKeywordDataTable({
         return `${baseUrl}${path}`;
     };
 
-    // --- Actions: 切換狀態 ---
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         setData((prev) =>
             prev.map((item) =>
@@ -228,9 +225,8 @@ export function HotKeywordDataTable({
         try {
             const result = await toggleHotKeywordStatus(id, currentStatus);
             if (!result.success) {
-                toast({
-                    variant: 'destructive',
-                    title: '更新失敗',
+                // ✅ Sonner 語法
+                toast.error('更新失敗', {
                     description: result.error,
                 });
                 setData((prev) =>
@@ -241,7 +237,8 @@ export function HotKeywordDataTable({
                     )
                 );
             } else {
-                toast({ title: '狀態已更新' });
+                // ✅ Sonner 語法
+                toast.success('狀態已更新');
             }
         } catch (error) {
             console.error(error);
@@ -250,13 +247,12 @@ export function HotKeywordDataTable({
                     item.id === id ? { ...item, isActive: currentStatus } : item
                 )
             );
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
         }
     };
 
-    // --- Actions: 刪除流程 ---
     const handleDeleteClick = (id: string) => {
         setDeleteId(id);
         setDeleteDialogOpen(true);
@@ -271,21 +267,22 @@ export function HotKeywordDataTable({
         try {
             const result = await deleteHotKeyword(deleteId);
             if (result.success) {
-                toast({ title: '刪除成功' });
+                // ✅ Sonner 語法
+                toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                toast({ variant: 'destructive', title: '刪除失敗' });
+                // ✅ Sonner 語法
+                toast.error('刪除失敗');
             }
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
             setDeleteId(null);
         }
     };
 
-    // DnD Sensors
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor, {
@@ -293,7 +290,6 @@ export function HotKeywordDataTable({
         })
     );
 
-    // --- Actions: 拖曳排序 ---
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -314,16 +310,13 @@ export function HotKeywordDataTable({
                     }));
                     const result = await reorderHotKeywords(idList);
                     if (!result.success) {
-                        toast({
-                            variant: 'destructive',
-                            title: '排序更新失敗',
-                        });
+                        toast.error('排序更新失敗');
                         setData(initialData);
                     }
                 } catch (error) {
                     console.error(error);
                     setData(initialData);
-                    toast({ variant: 'destructive', title: '發生錯誤' });
+                    toast.error('發生錯誤');
                 } finally {
                     hide();
                 }
@@ -331,7 +324,6 @@ export function HotKeywordDataTable({
         }
     };
 
-    // --- Columns 定義 ---
     const columns = React.useMemo<ColumnDef<HotKeyword>[]>(
         () => [
             {
@@ -374,7 +366,6 @@ export function HotKeywordDataTable({
                             </span>
                         );
                     
-                    // ✅ 使用 getDisplayUrl 取得完整網址
                     const displayUrl = getDisplayUrl(rawUrl);
 
                     return (
@@ -383,7 +374,7 @@ export function HotKeywordDataTable({
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-1 text-sm text-blue-600 hover:underline max-w-[300px]"
-                            title={displayUrl} // 滑鼠移上去顯示完整網址
+                            title={displayUrl}
                         >
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
                             <span className="truncate">{displayUrl}</span>
@@ -442,19 +433,14 @@ export function HotKeywordDataTable({
 
     return (
         <div className="space-y-4">
-            {/* 頂部工具列 */}
             <div className="flex items-center gap-2">
                 <Input
                     placeholder="搜尋標題..."
                     value={
-                        (table
-                            .getColumn('title')
-                            ?.getFilterValue() as string) ?? ''
+                        (table.getColumn('title')?.getFilterValue() as string) ?? ''
                     }
                     onChange={(event) =>
-                        table
-                            .getColumn('title')
-                            ?.setFilterValue(event.target.value)
+                        table.getColumn('title')?.setFilterValue(event.target.value)
                     }
                     className="max-w-sm"
                 />
@@ -479,9 +465,7 @@ export function HotKeywordDataTable({
                                             column.toggleVisibility(!!value)
                                         }
                                     >
-                                        {column.id === 'title'
-                                            ? '標題'
-                                            : column.id}
+                                        {column.id === 'title' ? '標題' : column.id}
                                     </DropdownMenuCheckboxItem>
                                 );
                             })}
@@ -491,7 +475,6 @@ export function HotKeywordDataTable({
                 <HotKeywordFormDialog trigger={<Button>新增關鍵字</Button>} />
             </div>
 
-            {/* 表格區塊 */}
             <div className="rounded-md border">
                 <DndContext
                     id={dndContextId}
@@ -508,8 +491,7 @@ export function HotKeywordDataTable({
                                             key={header.id}
                                             style={{
                                                 width:
-                                                    header.column.getSize() !==
-                                                    150
+                                                    header.column.getSize() !== 150
                                                         ? header.column.getSize()
                                                         : undefined,
                                             }}
@@ -517,8 +499,7 @@ export function HotKeywordDataTable({
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
-                                                      header.column.columnDef
-                                                          .header,
+                                                      header.column.columnDef.header,
                                                       header.getContext()
                                                   )}
                                         </TableHead>
@@ -528,20 +509,16 @@ export function HotKeywordDataTable({
                         </TableHeader>
                         <TableBody>
                             <SortableContext
-                                items={table
-                                    .getRowModel()
-                                    .rows.map((row) => row.original.id)}
+                                items={table.getRowModel().rows.map((row) => row.original.id)}
                                 strategy={verticalListSortingStrategy}
                             >
                                 {table.getRowModel().rows?.length ? (
-                                    table
-                                        .getRowModel()
-                                        .rows.map((row) => (
-                                            <DraggableRow
-                                                key={row.id}
-                                                row={row}
-                                            />
-                                        ))
+                                    table.getRowModel().rows.map((row) => (
+                                        <DraggableRow
+                                            key={row.id}
+                                            row={row}
+                                        />
+                                    ))
                                 ) : (
                                     <TableRow>
                                         <TableCell
@@ -558,7 +535,6 @@ export function HotKeywordDataTable({
                 </DndContext>
             </div>
 
-            {/* 底部：分頁 */}
             <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="text-sm text-muted-foreground">
                     總共 {table.getFilteredRowModel().rows.length} 筆資料

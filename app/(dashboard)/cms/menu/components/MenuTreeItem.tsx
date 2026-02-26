@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 
 // 定義資料結構
@@ -41,7 +41,8 @@ const MenuTreeItem = React.forwardRef<
 >((props, ref) => {
     const { item } = props;
     const id = useMemo(() => String(item.id), [item.id]);
-    const { toast } = useToast();
+    
+    // ❌ 移除 const { toast } = useToast(); 
 
     // Dialog 開關狀態
     const [editOpen, setEditOpen] = useState(false);
@@ -62,19 +63,17 @@ const MenuTreeItem = React.forwardRef<
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
 
-    // ✅ 關鍵：事件阻擋函式
+    // ✅ 事件阻擋函式
     const stopPropagation = (e: React.SyntheticEvent) => {
         e.stopPropagation();
     };
 
-    // ✅ 新增：處理網址顯示邏輯
+    // ✅ 處理網址顯示邏輯
     const getDisplayUrl = (url: string) => {
         if (!url) return '';
-        // 如果已經是完整網址 (http/https 開頭)，直接回傳
         if (url.startsWith('http://') || url.startsWith('https://')) {
             return url;
         }
-        // 否則補上預設網域，並確保斜線正確
         const baseUrl = 'https://www.dtsgroup.com.tw';
         const path = url.startsWith('/') ? url : `/${url}`;
         return `${baseUrl}${path}`;
@@ -130,11 +129,13 @@ const MenuTreeItem = React.forwardRef<
             item.gaCategory = gaCategory;
             item.gaLabel = gaLabel;
 
-            toast({ variant: 'success', title: '更新成功', duration: 1200 });
+            // ✅ Sonner 語法
+            toast.success('更新成功');
             setEditOpen(false);
         } catch (err: any) {
             console.error('❌ 更新失敗:', err);
-            toast({ variant: 'destructive', title: '更新失敗', description: err?.message, duration: 1500 });
+            // ✅ Sonner 語法
+            toast.error('更新失敗', { description: err?.message });
         } finally {
             setSaving(false);
         }
@@ -146,12 +147,14 @@ const MenuTreeItem = React.forwardRef<
             const res = await fetch(`/api/menu/${id}`, { method: 'DELETE' });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            toast({ variant: 'success', title: '已刪除', duration: 1200 });
+            // ✅ Sonner 語法
+            toast.success('已刪除');
             window.dispatchEvent(new CustomEvent('menu:changed'));
             setDelOpen(false);
         } catch (err: any) {
             console.error('刪除失敗:', err);
-            toast({ variant: 'destructive', title: '刪除失敗', description: err?.message, duration: 1500 });
+            // ✅ Sonner 語法
+            toast.error('刪除失敗', { description: err?.message });
         } finally {
             setDeleting(false);
         }
@@ -172,11 +175,10 @@ const MenuTreeItem = React.forwardRef<
                     <div>
                         <div className="font-medium text-sm">{item.value}</div>
                         <div className="flex flex-col text-xs text-gray-500">
-                            {/* ✅ 修改處：使用 getDisplayUrl 處理網址顯示 */}
                             {item.linkUrl && (
                                 <span 
                                     className="truncate max-w-[200px]" 
-                                    title={getDisplayUrl(item.linkUrl)} // 滑鼠移上去可以看到完整網址
+                                    title={getDisplayUrl(item.linkUrl)} 
                                 >
                                     {getDisplayUrl(item.linkUrl)}
                                 </span>

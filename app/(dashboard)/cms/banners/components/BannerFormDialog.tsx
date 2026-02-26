@@ -31,7 +31,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -51,7 +51,8 @@ export default function BannerFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
+    
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
     const setIsOpen = setControlledOpen ?? setInternalOpen;
@@ -118,13 +119,15 @@ export default function BannerFormDialog({
                 }
 
                 if (result.success) {
-                    toast({ title: '操作成功', description: result.message });
+                    // ✅ 改用 Sonner 語法
+                    toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    toast({ variant: "destructive", title: '操作失敗', description: result.message });
+                    // ✅ 改用 Sonner 語法
+                    toast.error('操作失敗', { description: result.message });
                 }
             } catch (err) {
-                toast({ variant: 'destructive', title: '發生錯誤', description: '請稍後再試' });
+                toast.error('發生錯誤', { description: '請稍後再試' });
             }
         });
     };

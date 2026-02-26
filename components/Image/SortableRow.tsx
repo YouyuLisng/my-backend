@@ -2,13 +2,12 @@
 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import Image from 'next/image';
 import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 1. 已改用 sonner
 import PDFViewerFullScreen from '@/components/PDF/PDFViewerFullScreen';
 import { FileSearch, Loader2 } from 'lucide-react';
 import { BsFileEarmarkPdfFill } from 'react-icons/bs';
-// ✅ 1. 引入 Store
+// ✅ 引入 Store
 import { useLoadingStore } from '@/stores/useLoadingStore';
 
 interface Props {
@@ -40,8 +39,8 @@ export default function SortableRow({
         transition,
     };
 
-    const { toast } = useToast();
-    // ✅ 2. 取得 show, hide 方法
+    // ❌ 移除 const { toast } = useToast(); 
+    
     const { show, hide } = useLoadingStore();
     
     const [preview, setPreview] = useState(false);
@@ -76,29 +75,25 @@ export default function SortableRow({
                 throw new Error(err.error || '刪除失敗');
             }
 
-            // 2. API 成功，先關閉全站 Loading，讓使用者可以繼續操作其他東西
+            // 2. API 成功，關閉全站 Loading
             hide();
 
-            // 3. 設定 deleted 狀態，觸發該列的 CSS 淡出動畫
+            // 3. 設定 deleted 狀態，觸發 CSS 動畫
             setDeleted(true);
 
-            // 4. 等待動畫結束 (300ms) 後，才真的從資料面移除
+            // 4. 等待動畫結束後移除資料並提示
             setTimeout(() => {
                 onDelete();
-                toast({
-                    title: '檔案已刪除',
-                    duration: 1500,
-                });
+                // ✅ Sonner 語法
+                toast.success('檔案已刪除');
             }, 300);
 
         } catch (error: any) {
-            // 失敗處理
-            hide(); // 關閉全站 Loading
-            setDeleting(false); // 關閉按鈕轉圈，恢復可點擊
-            toast({
-                title: '刪除失敗',
+            hide();
+            setDeleting(false);
+            // ✅ Sonner 語法
+            toast.error('刪除失敗', {
                 description: error.message,
-                variant: 'destructive',
             });
         }
     };
@@ -108,7 +103,6 @@ export default function SortableRow({
             <div
                 ref={setNodeRef}
                 style={style}
-                // 當 deleted 為 true 時，觸發淡出與位移
                 className={`flex items-center justify-between rounded-lg border border-slate-200 bg-white p-3 shadow-sm hover:shadow-md transition-all duration-300 ease-in-out ${
                     deleted 
                         ? 'opacity-0 translate-x-4 pointer-events-none scale-95' 
@@ -121,7 +115,6 @@ export default function SortableRow({
                     {...attributes}
                     {...listeners}
                 >
-                    {/* PDF */}
                     {isPDF ? (
                         <div
                             className="relative w-[60px] h-[60px] flex-shrink-0 rounded-md bg-red-100 border border-red-300 flex items-center justify-center cursor-pointer"
@@ -130,7 +123,6 @@ export default function SortableRow({
                             <BsFileEarmarkPdfFill className="w-10 h-10 text-red-600" />
                         </div>
                     ) : (
-                        /* Image - 改用原生 img 以確保清晰度 */
                         <div className="relative w-[100px] h-[100px] flex-shrink-0 rounded-md overflow-hidden border bg-slate-50 flex items-center justify-center">
                             <img
                                 src={data.url}

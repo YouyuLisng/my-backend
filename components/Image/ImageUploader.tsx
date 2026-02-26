@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ChangeEvent, useCallback, useId, useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import {
     DndContext,
     closestCenter,
@@ -48,12 +48,12 @@ export default function ImageUploader({
     className
 }: Props) {
     const { show, hide } = useLoadingStore();
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
+    
     const [isUploading, setIsUploading] = useState(false);
     const uploaderId = useId();
     const inputId = id || uploaderId;
 
-    // 是否顯示上傳區：如果限制 1 張且已有圖，則隱藏上傳區以減少線框
     const showUploadArea = value.length < maxCount;
 
     const validateImageSize = (file: File): Promise<boolean> => {
@@ -86,16 +86,14 @@ export default function ImageUploader({
                 const { url } = await res.json();
                 return { url, name: file.name };
             } catch (err) {
-                toast({
-                    variant: 'destructive',
-                    title: '上傳失敗',
+                // ✅ Sonner 語法
+                toast.error('上傳失敗', {
                     description: `${file.name} 無法上傳`,
-                    duration: 1800,
                 });
                 return null;
             }
         },
-        [toast]
+        []
     );
 
     const handleFileInput = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -116,9 +114,8 @@ export default function ImageUploader({
             if (currentImages.length + uploaded.length >= maxCount) break;
 
             if (file.size / 1024 / 1024 > 50) {
-                toast({
-                    variant: 'destructive',
-                    title: '檔案過大',
+                // ✅ Sonner 語法
+                toast.error('檔案過大', {
                     description: `${file.name} 超過 50MB`,
                 });
                 continue;
@@ -126,9 +123,8 @@ export default function ImageUploader({
 
             const validSize = await validateImageSize(file);
             if (!validSize) {
-                toast({
-                    variant: 'destructive',
-                    title: '圖片尺寸不符',
+                // ✅ Sonner 語法
+                toast.error('圖片尺寸不符', {
                     description: `必須是 ${requiredSize?.width}x${requiredSize?.height}`,
                 });
                 continue;
@@ -163,14 +159,13 @@ export default function ImageUploader({
 
     return (
         <div className={cn("w-full", className)}>
-            {/* 上傳區：僅在需要時顯示，且背景與邊框極簡化 */}
             {showUploadArea && (
                 <label
                     htmlFor={inputId}
                     className={cn(
                         "group flex flex-col items-center justify-center w-full transition-all duration-200 cursor-pointer",
                         "min-h-[140px] rounded-xl",
-                        "hover:bg-blue-50/50" // 僅在 hover 時顯示淡色背景
+                        "hover:bg-blue-50/50" 
                     )}
                 >
                     <div className="flex flex-col items-center text-center p-4">
@@ -200,7 +195,6 @@ export default function ImageUploader({
                 onChange={handleFileInput}
             />
 
-            {/* 預覽列表：當有圖片時顯示 */}
             {value.length > 0 && (
                 <DndContext
                     sensors={sensors}

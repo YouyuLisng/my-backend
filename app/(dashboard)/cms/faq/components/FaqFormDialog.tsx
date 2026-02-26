@@ -29,7 +29,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import TinyEditor from '@/components/TinyEditor';
 
 interface Props {
@@ -47,7 +47,7 @@ export default function FaqFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     
     // 內部狀態管理
     const [internalOpen, setInternalOpen] = useState(false);
@@ -101,12 +101,12 @@ export default function FaqFormDialog({
                     result = await createFaq(null, formData);
                 }
                 if (result.success) {
-                    toast({ title: '操作成功', description: result.message });
+                    // ✅ 改用 Sonner 語法
+                    toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    toast({ 
-                        variant: "destructive",
-                        title: '操作失敗', 
+                    // ✅ 改用 Sonner 語法
+                    toast.error('操作失敗', { 
                         description: result.message || '請檢查欄位' 
                     });
                     
@@ -116,7 +116,8 @@ export default function FaqFormDialog({
                 }
             } catch (err) {
                 console.error(err);
-                toast({ variant: 'destructive', title: '發生錯誤', description: '請稍後再試' });
+                // ✅ 改用 Sonner 語法
+                toast.error('發生錯誤', { description: '請稍後再試' });
             }
         });
     };

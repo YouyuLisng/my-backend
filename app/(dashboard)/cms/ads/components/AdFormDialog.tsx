@@ -35,7 +35,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
@@ -55,7 +55,7 @@ export default function AdFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
@@ -121,18 +121,19 @@ export default function AdFormDialog({
                 }
 
                 if (result.success) {
-                    toast({ title: '操作成功', description: result.message });
+                    // ✅ Sonner 語法
+                    toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    toast({ 
-                        variant: "destructive",
-                        title: '操作失敗', 
+                    // ✅ Sonner 語法
+                    toast.error('操作失敗', { 
                         description: result.message || '請檢查欄位' 
                     });
                 }
             } catch (err) {
                 console.error(err);
-                toast({ variant: 'destructive', title: '發生錯誤', description: '請稍後再試' });
+                // ✅ Sonner 語法
+                toast.error('發生錯誤', { description: '請稍後再試' });
             }
         });
     };
@@ -204,12 +205,11 @@ export default function AdFormDialog({
                                             <FormItem>
                                                 <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1 after:content-['*'] after:ml-0.5 after:text-red-500">廣告圖片</FormLabel>
                                                 <FormControl>
-                                                    {/* 單一虛線框樣式，移除多重邊框 */}
                                                     <div className="mt-1">
                                                         <SingleImageUploader 
                                                             value={field.value} 
                                                             onChange={field.onChange}
-                                                            label="" // 內部標籤留空，由外部標籤控管
+                                                            label="" 
                                                         />
                                                     </div>
                                                 </FormControl>

@@ -63,7 +63,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 
 import {
     deleteCard,
@@ -191,14 +191,12 @@ interface CardDataTableProps {
 
 export function CardDataTable({ data: initialData, moduleId, moduleTitle }: CardDataTableProps) {
     const [data, setData] = React.useState(initialData);
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     const { show, hide } = useLoadingStore();
 
-    // 刪除對話框狀態
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
-    // --- Table States ---
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -216,7 +214,6 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
         setData(initialData);
     }, [initialData]);
 
-    // ✅ 新增：處理網址顯示邏輯
     const getDisplayUrl = (url: string) => {
         if (!url) return '';
         if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -227,7 +224,6 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
         return `${baseUrl}${path}`;
     };
 
-    // --- Actions: 切換狀態 ---
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
         setData((prev) =>
             prev.map((item) =>
@@ -241,19 +237,18 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
             const result = await toggleCardStatus(id, currentStatus);
 
             if (!result.success) {
-                toast({
-                    variant: 'destructive',
-                    title: '更新失敗',
+                // ✅ Sonner 語法
+                toast.error('更新失敗', {
                     description: result.error ? '發生錯誤' : undefined,
                 });
-                // 還原
                 setData((prev) =>
                     prev.map((item) =>
                         item.id === id ? { ...item, isActive: currentStatus } : item
                     )
                 );
             } else {
-                toast({ title: '狀態已更新' });
+                // ✅ Sonner 語法
+                toast.success('狀態已更新');
             }
         } catch (error) {
             console.error(error);
@@ -262,13 +257,12 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
                     item.id === id ? { ...item, isActive: currentStatus } : item
                 )
             );
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
         }
     };
 
-    // --- Actions: 刪除流程 ---
     const handleDeleteClick = (id: string) => {
         setDeleteId(id);
         setDeleteDialogOpen(true);
@@ -283,21 +277,22 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
         try {
             const result = await deleteCard(deleteId);
             if (result.success) {
-                toast({ title: '刪除成功' });
+                // ✅ Sonner 語法
+                toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                toast({ variant: 'destructive', title: '刪除失敗' });
+                // ✅ Sonner 語法
+                toast.error('刪除失敗');
             }
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
             setDeleteId(null);
         }
     };
 
-    // --- Actions: 拖曳排序 ---
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -320,16 +315,14 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
                     const result = await reorderCards(idList);
 
                     if (!result.success) {
-                        toast({
-                            variant: 'destructive',
-                            title: '排序更新失敗',
-                        });
+                        // ✅ Sonner 語法
+                        toast.error('排序更新失敗');
                         setData(initialData);
                     }
                 } catch (error) {
                     console.error(error);
                     setData(initialData);
-                    toast({ variant: 'destructive', title: '發生錯誤' });
+                    toast.error('發生錯誤');
                 } finally {
                     hide();
                 }
@@ -337,7 +330,6 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
         }
     };
 
-    // --- Columns 定義 ---
     const columns = React.useMemo<ColumnDef<Card>[]>(
         () => [
             {
@@ -389,7 +381,6 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
                 size: 300,
                 cell: ({ row }) => {
                     const rawHref = row.original.href;
-                    // ✅ 使用 getDisplayUrl 處理網址
                     const displayUrl = getDisplayUrl(rawHref);
 
                     return (
@@ -399,11 +390,11 @@ export function CardDataTable({ data: initialData, moduleId, moduleTitle }: Card
                             </span>
                             {rawHref && (
                                 <a
-                                    href={displayUrl} // ✅ 使用完整網址
+                                    href={displayUrl}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="flex items-center gap-1 text-xs text-blue-600 hover:underline truncate max-w-[180px]"
-                                    title={displayUrl} // ✅ 滑鼠移上去顯示完整網址
+                                    title={displayUrl}
                                 >
                                     <ExternalLink className="h-3 w-3" />
                                     {displayUrl}

@@ -36,6 +36,7 @@ import {
     GripVertical,
     Pencil,
     Trash2,
+    Plus,
     ExternalLink,
     ChevronDown,
 } from 'lucide-react';
@@ -61,7 +62,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 確認使用 sonner
 
 // Server Actions
 import {
@@ -184,7 +185,7 @@ interface BannerDataTableProps {
 
 export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
     const [data, setData] = React.useState(initialData);
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     const { show, hide } = useLoadingStore();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -201,7 +202,7 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
         setData(initialData);
     }, [initialData]);
 
-    // ✅ 新增：處理網址顯示邏輯
+    // ✅ 處理網址顯示邏輯
     const getDisplayUrl = (url: string) => {
         if (!url) return '';
         if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -226,9 +227,8 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
             const result = await toggleBannerStatus(id, currentStatus);
 
             if (!result.success) {
-                toast({
-                    variant: 'destructive',
-                    title: '更新失敗',
+                // ✅ 改用 Sonner 語法
+                toast.error('更新失敗', {
                     description: result.error,
                 });
                 setData((prev) =>
@@ -237,7 +237,7 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                     )
                 );
             } else {
-                toast({ title: '狀態已更新' });
+                toast.success('狀態已更新');
             }
         } catch (error) {
             console.error(error);
@@ -246,19 +246,17 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                     item.id === id ? { ...item, isActive: currentStatus } : item
                 )
             );
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
         }
     };
 
-    // --- Step 1: 點擊刪除按鈕 (只開啟 Dialog) ---
     const handleDeleteClick = (id: string) => {
         setDeleteId(id);
         setDeleteDialogOpen(true);
     };
 
-    // --- Step 2: 真正執行刪除 (Dialog 確認後呼叫) ---
     const confirmDelete = async () => {
         if (!deleteId) return;
 
@@ -268,21 +266,20 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
         try {
             const result = await deleteBanner(deleteId);
             if (result.success) {
-                toast({ title: '刪除成功' });
+                toast.success('刪除成功');
                 setData((prev) => prev.filter((item) => item.id !== deleteId));
             } else {
-                toast({ variant: 'destructive', title: '刪除失敗' });
+                toast.error('刪除失敗');
             }
         } catch (error) {
             console.error(error);
-            toast({ variant: 'destructive', title: '發生錯誤' });
+            toast.error('發生錯誤');
         } finally {
             hide();
             setDeleteId(null);
         }
     };
 
-    // DnD Sensors
     const sensors = useSensors(
         useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
         useSensor(KeyboardSensor, {
@@ -290,7 +287,6 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
         })
     );
 
-    // --- Actions: 拖曳排序 ---
     const handleDragEnd = async (event: DragEndEvent) => {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
@@ -309,16 +305,13 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                     const result = await reorderBanners(idList);
 
                     if (!result.success) {
-                        toast({
-                            variant: 'destructive',
-                            title: '排序更新失敗',
-                        });
+                        toast.error('排序更新失敗');
                         setData(initialData);
                     }
                 } catch (error) {
                     console.error(error);
                     setData(initialData);
-                    toast({ variant: 'destructive', title: '發生錯誤' });
+                    toast.error('發生錯誤');
                 } finally {
                     hide();
                 }
@@ -326,7 +319,6 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
         }
     };
 
-    // --- Columns 定義 ---
     const columns = React.useMemo<ColumnDef<Banner>[]>(
         () => [
             {
@@ -392,7 +384,6 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                             </span>
                         );
                     
-                    // ✅ 使用 getDisplayUrl 取得完整網址
                     const displayUrl = getDisplayUrl(rawUrl);
 
                     return (
@@ -401,9 +392,8 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                             target="_blank"
                             rel="noreferrer"
                             className="flex items-center gap-1 text-sm text-blue-600 hover:underline max-w-[200px]"
-                            title={displayUrl} // 滑鼠移上去顯示完整網址
+                            title={displayUrl}
                         >
-                            {/* 顯示完整網址 */}
                             <span className="truncate">{displayUrl}</span>
                             <ExternalLink className="h-3 w-3 flex-shrink-0" />
                         </a>
@@ -461,7 +451,6 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
 
     return (
         <div className="space-y-4">
-            {/* 頂部工具列 */}
             <div className="flex items-center gap-2">
                 <Input
                     placeholder="搜尋標題..."
@@ -494,7 +483,11 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                                             column.toggleVisibility(!!value)
                                         }
                                     >
-                                        {column.id}
+                                        {column.id === 'imageUrl' ? '圖片' : 
+                                         column.id === 'title' ? '標題' :
+                                         column.id === 'linkUrl' ? '連結' :
+                                         column.id === 'isActive' ? '狀態' :
+                                         column.id === 'order' ? '排序' : column.id}
                                     </DropdownMenuCheckboxItem>
                                 );
                             })}
@@ -510,7 +503,6 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                 />
             </div>
 
-            {/* 表格區塊 */}
             <div className="rounded-md border">
                 <DndContext
                     id={dndContextId}
@@ -577,7 +569,6 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                 </DndContext>
             </div>
 
-            {/* 底部：分頁與統計 */}
             <div className="flex items-center justify-between space-x-2 py-4">
                 <div className="text-sm text-muted-foreground">
                     總共 {table.getFilteredRowModel().rows.length} 筆資料

@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 改用 Sonner
 import PageBaseInfo from './PageBaseInfo';
 import ProductSectionManager from './ProductSectionManager';
 import PageSeoSettings from './PageSeoSettings';
@@ -19,7 +19,6 @@ import Link from 'next/link';
 import { AlertCircle } from 'lucide-react';
 
 export default function NewPageForm({ initialData }: { initialData?: any }) {
-    const { toast } = useToast();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const isEditMode = !!initialData?.id;
@@ -63,14 +62,22 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
                     : await createNewPage(formData);
 
                 if (result.success) {
-                    toast({ title: isEditMode ? '更新成功' : '建立成功', description: result.message });
+                    // ✅ Sonner 語法：第一個參數是標題字串
+                    toast.success(isEditMode ? '更新成功' : '建立成功', {
+                        description: result.message 
+                    });
                     router.push('/cms/new-pages');
                     router.refresh();
                 } else {
-                    toast({ variant: 'destructive', title: '儲存失敗', description: result.message });
+                    // ✅ Sonner 語法：失敗使用 toast.error
+                    toast.error('儲存失敗', {
+                        description: result.message 
+                    });
                 }
             } catch (error) {
-                toast({ variant: 'destructive', title: '系統錯誤', description: '無法連接伺服器' });
+                toast.error('系統錯誤', {
+                    description: '無法連接伺服器' 
+                });
             }
         });
     };
@@ -79,12 +86,10 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
     const onInvalid = (errors: any) => {
         console.warn("表單驗證未通過:", errors);
         
-        // 取得第一個出錯的欄位名稱（簡化提示）
         const errorFields = Object.keys(errors);
         
-        toast({
-            variant: 'destructive',
-            title: '請檢查必填欄位',
+        // ✅ Sonner 語法
+        toast.error('請檢查必填欄位', {
             description: `尚有 ${errorFields.length} 個項目未正確填寫，請檢查標記紅色的部分。`,
         });
     };
@@ -105,7 +110,6 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
                             <Link href="/cms/new-pages">取消返回</Link>
                         </Button>
                         <Button 
-                            // ✅ handleSubmit 接收兩個參數：成功回呼與失敗回呼
                             onClick={form.handleSubmit(onSubmit, onInvalid)} 
                             disabled={isPending}
                             className="rounded-xl px-8 h-11 bg-[#1a1a1a] hover:bg-black text-white font-bold transition-all active:scale-95 shadow-lg shadow-slate-200"
@@ -116,7 +120,7 @@ export default function NewPageForm({ initialData }: { initialData?: any }) {
                 </div>
 
                 <main className="p-8 max-w-[1400px] mx-auto w-full pb-20">
-                    {/* 頂部錯誤快速提示面板 (選填) */}
+                    {/* 頂部錯誤快速提示面板 */}
                     {Object.keys(form.formState.errors).length > 0 && (
                         <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 animate-in zoom-in-95">
                             <AlertCircle size={20} />

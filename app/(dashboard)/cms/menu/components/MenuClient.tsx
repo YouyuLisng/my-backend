@@ -26,11 +26,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from "sonner" // ✅ 已改用 sonner
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 
 export default function MenuClient() {
-    const { toast } = useToast();
+    // ❌ 移除 const { toast } = useToast(); 
     const { show, hide } = useLoadingStore();
 
     const [items, setItems] = useState<any[]>([]);
@@ -137,20 +137,15 @@ export default function MenuClient() {
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            toast({
-                variant: 'success',
-                title: '順序已更新',
-                duration: 1000,
-            });
+            // ✅ Sonner 語法
+            toast.success('順序已更新');
 
             await fetchMenu({ silent: true });
         } catch (e) {
             console.error('更新選單順序失敗:', e);
-            toast({
-                variant: 'destructive',
-                title: '排序失敗',
-                description: '請稍後再試',
-                duration: 1500,
+            // ✅ Sonner 語法
+            toast.error('排序失敗', {
+                description: '請稍後再試'
             });
         } finally {
             hide();
@@ -179,11 +174,8 @@ export default function MenuClient() {
             const payload = await res.json();
             if (!res.ok) throw new Error(payload?.message || '建立失敗');
 
-            toast({
-                variant: 'success',
-                title: '已新增選單',
-                duration: 1500,
-            });
+            // ✅ Sonner 語法
+            toast.success('已新增選單');
 
             setCreateOpen(false);
             setNewTitle('');
@@ -197,11 +189,9 @@ export default function MenuClient() {
 
             fetchMenu({ silent: true });
         } catch (err: any) {
-            toast({
-                variant: 'destructive',
-                title: '新增失敗',
-                description: err?.message || '請稍後再試',
-                duration: 1500,
+            // ✅ Sonner 語法
+            toast.error('新增失敗', {
+                description: err?.message || '請稍後再試'
             });
         } finally {
             setCreating(false);
@@ -227,7 +217,6 @@ export default function MenuClient() {
                     </DialogTrigger>
                     <DialogContent 
                         className="w-[95vw] sm:max-w-[520px] md:max-w-[720px] lg:max-w-[840px] max-h-[85vh] overflow-y-auto"
-                        // ✅ 新增這行：攔截與外部區域的互動，防止點擊遮罩時關閉視窗
                         onInteractOutside={(e) => {
                             e.preventDefault();
                         }}

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { Button } from '@/components/ui/button';
 import { getCardsByModule } from './actions/card';
 import { CardDataTable } from './components/CardDataTable';
@@ -22,7 +22,7 @@ export default async function ModuleCardsPage(props: PageProps) {
     const params = await props.params;
     const moduleId = params.id;
 
-    const moduleData = await db.module.findUnique({
+    const moduleData = await prisma.module.findUnique({
         where: { id: moduleId },
         select: { id: true, title: true },
     });
