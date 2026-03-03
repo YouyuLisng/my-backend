@@ -1,6 +1,4 @@
 'use client';
-
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LayoutDashboard, FileText, Users, MousePointer2 } from 'lucide-react';
 import {

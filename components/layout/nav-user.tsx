@@ -111,7 +111,7 @@ export function NavUser({
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <Icon size={12} className={cn("shrink-0", config.className.split(' ')[1])} />
+                                        {/* <Icon size={12} className={cn("shrink-0", config.className.split(' ')[1])} /> */}
                                         <span className={cn("text-[11px] font-bold uppercase tracking-wider", config.className.split(' ')[1])}>
                                             {config.label}
                                         </span>
