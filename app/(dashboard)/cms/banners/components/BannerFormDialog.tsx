@@ -183,7 +183,6 @@ export default function BannerFormDialog({
                                             </MuiFormItem>
                                         )}
                                     />
-
                                     <FormField
                                         control={form.control}
                                         name="linkUrl"
@@ -193,7 +192,6 @@ export default function BannerFormDialog({
                                             </MuiFormItem>
                                         )}
                                     />
-
                                     <FormField
                                         control={form.control}
                                         name="imageUrl"
@@ -209,7 +207,6 @@ export default function BannerFormDialog({
                                             </FormItem>
                                         )}
                                     />
-
                                     <FormField
                                         control={form.control}
                                         name="isActive"
@@ -231,14 +228,12 @@ export default function BannerFormDialog({
                                         )}
                                     />
                                 </div>
-
                                 {/* 右側：GA 追蹤 */}
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-2 mb-2">
                                         <div className="w-1 h-5 bg-orange-500 rounded-full" />
                                         <h3 className="font-bold text-sm text-slate-700 uppercase tracking-widest">追蹤資訊 (GA)</h3>
                                     </div>
-
                                     <div className="grid gap-5 p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
                                         <FormField
                                             control={form.control}
@@ -282,7 +277,6 @@ export default function BannerFormDialog({
                         </form>
                     </Form>
                 </ScrollArea>
-
                 {/* Footer: MUI 按鈕風格 */}
                 <DialogFooter className="p-6 bg-slate-50 border-t border-slate-100 gap-3">
                     <Button 

@@ -36,7 +36,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from "sonner" 
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -54,7 +53,7 @@ export default function HotKeywordFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    // ❌ 移除 const { toast } = useToast(); 
+    
     
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;

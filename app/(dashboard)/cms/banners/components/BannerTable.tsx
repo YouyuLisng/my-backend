@@ -62,7 +62,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { toast } from "sonner" // ✅ 確認使用 sonner
+import { toast } from "sonner" 
 
 // Server Actions
 import {
@@ -185,13 +185,11 @@ interface BannerDataTableProps {
 
 export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
     const [data, setData] = React.useState(initialData);
-    // ❌ 移除 const { toast } = useToast(); 
     const { show, hide } = useLoadingStore();
 
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [deleteId, setDeleteId] = React.useState<string | null>(null);
 
-    // --- Table States ---
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -202,7 +200,6 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
         setData(initialData);
     }, [initialData]);
 
-    // ✅ 處理網址顯示邏輯
     const getDisplayUrl = (url: string) => {
         if (!url) return '';
         if (url.startsWith('http://') || url.startsWith('https://')) {
