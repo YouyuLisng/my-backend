@@ -118,18 +118,18 @@ export default function HotKeywordFormDialog({
                 }
 
                 if (result.success) {
-                    // ✅ 改用 Sonner 語法
+                    
                     toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    // ✅ 改用 Sonner 語法
+                    
                     toast.error('操作失敗', { 
                         description: result.message || '請檢查欄位' 
                     });
                 }
             } catch (err) {
                 console.error(err);
-                // ✅ 改用 Sonner 語法
+                
                 toast.error('發生錯誤', { description: '請稍後再試' });
             }
         });

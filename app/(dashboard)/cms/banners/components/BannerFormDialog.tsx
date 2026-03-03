@@ -33,7 +33,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from "sonner" 
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -51,8 +50,6 @@ export default function BannerFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    // ❌ 移除 const { toast } = useToast(); 
-    
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
     const setIsOpen = setControlledOpen ?? setInternalOpen;
@@ -119,11 +116,11 @@ export default function BannerFormDialog({
                 }
 
                 if (result.success) {
-                    // ✅ 改用 Sonner 語法
+                    
                     toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    // ✅ 改用 Sonner 語法
+                    
                     toast.error('操作失敗', { description: result.message });
                 }
             } catch (err) {
