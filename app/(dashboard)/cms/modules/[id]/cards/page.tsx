@@ -8,13 +8,9 @@ import { Button } from '@/components/ui/button';
 import { getCardsByModule } from './actions/card';
 import { CardDataTable } from './components/CardDataTable';
 
-// 引入 Server Actions 與 Components
-// 注意：根據你的目錄結構，這裡假設 actions 和 components 位於 modules 資料夾下
-
-// ✅ Next.js 15 定義：params 是一個 Promise
 interface PageProps {
     params: Promise<{
-        id: string; // 這裡是動態路由的 [id]，代表 moduleId
+        id: string;
     }>;
 }
 

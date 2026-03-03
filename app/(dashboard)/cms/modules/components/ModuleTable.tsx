@@ -71,7 +71,6 @@ const ModuleActionsCell = ({ module, onDeleteClick }: ModuleActionsCellProps) =>
                 open={showEditDialog}
                 onOpenChange={setShowEditDialog}
             />
-
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -81,19 +80,15 @@ const ModuleActionsCell = ({ module, onDeleteClick }: ModuleActionsCellProps) =>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>操作</DropdownMenuLabel>
-                    
                     <DropdownMenuItem asChild>
                         <Link href={`/cms/modules/${module.id}/cards`} className="cursor-pointer">
                             <Eye className="mr-2 h-4 w-4" /> 查看卡片列表
                         </Link>
                     </DropdownMenuItem>
-
                     <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
                         <Pencil className="mr-2 h-4 w-4" /> 編輯
                     </DropdownMenuItem>
-                    
                     <DropdownMenuSeparator />
-                    
                     <DropdownMenuItem
                         className="text-red-600 focus:text-red-600"
                         onClick={() => onDeleteClick(module.id)}

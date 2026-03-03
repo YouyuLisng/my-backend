@@ -2,11 +2,9 @@
 
 import * as React from 'react';
 import { useSession } from 'next-auth/react';
-
-// 導入元件
 import { NavMain } from '@/components/nav-main';
 import { NavSecondary } from '@/components/nav-secondary';
-import { NavUser } from '@/components/nav-user'; // ✅ 修正 import 路徑
+import { NavUser } from '@/components/nav-user';
 import {
     Sidebar,
     SidebarContent,
@@ -16,8 +14,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
-
-// 導入配置
 import { sidebarItems, sidebarTeams } from '@/config/sidebar.config'; 
 import { LifeBuoy, Send } from 'lucide-react';
 
@@ -29,12 +25,11 @@ const navSecondary = [
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { data: session } = useSession();
 
-    // ✅ 整合用戶資訊，補上 role 欄位
     const currentUser = {
         name: session?.user?.name || '管理員',
         email: session?.user?.email || 'admin@dajung.com.tw',
         image: session?.user?.image || '', 
-        role: session?.user?.role || 'PRODUCT', // ✅ 從 Session 取得角色
+        role: session?.user?.role || 'PRODUCT',
     };
 
     const activeTeam = sidebarTeams[0];
@@ -45,7 +40,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <a href="/cms">
+                            <a href="/dashboard">
                                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                                     <activeTeam.logo className="size-4" />
                                 </div>
