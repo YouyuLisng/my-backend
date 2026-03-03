@@ -43,8 +43,8 @@ export function NavUser({
     user: {
         name: string;
         email: string;
-        image: string; // ✅ 將 avatar 改為 image 以匹配 app-sidebar.tsx
-        role?: string;  // ✅ 加入 role
+        image: string;
+        role?: string;
     };
 }) {
     const { isMobile } = useSidebar();
@@ -64,7 +64,7 @@ export function NavUser({
                         >
                             <Avatar className="h-8 w-8 rounded-lg shadow-sm">
                                 <AvatarImage
-                                    src={user.image} // ✅ 使用 image
+                                    src={user.image}
                                     alt={user.name}
                                 />
                                 <AvatarFallback className="rounded-lg bg-blue-100 text-blue-700 font-bold">
@@ -98,7 +98,7 @@ export function NavUser({
                             <div className="flex items-center gap-3 px-2 py-2 text-left text-sm">
                                 <Avatar className="h-9 w-9 rounded-lg">
                                     <AvatarImage
-                                        src={user.image} // ✅ 使用 image
+                                        src={user.image}
                                         alt={user.name}
                                     />
                                     <AvatarFallback className="rounded-lg bg-blue-50 text-blue-600 font-bold">
