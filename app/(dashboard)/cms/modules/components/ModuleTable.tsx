@@ -83,7 +83,7 @@ const ModuleActionsCell = ({ module, onDeleteClick }: ModuleActionsCellProps) =>
                     <DropdownMenuLabel>操作</DropdownMenuLabel>
                     
                     <DropdownMenuItem asChild>
-                        <Link href={`/admin/modules/${module.id}/cards`} className="cursor-pointer">
+                        <Link href={`/cms/modules/${module.id}/cards`} className="cursor-pointer">
                             <Eye className="mr-2 h-4 w-4" /> 查看卡片列表
                         </Link>
                     </DropdownMenuItem>

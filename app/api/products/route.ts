@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json(); // 接收來自前端的 { qmgrupcd } 或 { qmgrupcds }
+        const body = await request.json();
         
         const payload = {
-            qcoun: "JP",      // 預設值
-            pageNumber: 1,    // 預設值
-            pageSize: 50,     // 擴大單次查詢數量
-            ...body           // 將 qmgrupcd 或 qmgrupcds 覆蓋進去
+            qcoun: "JP",
+            pageNumber: 1,
+            pageSize: 50,
+            ...body
         };
 
         const response = await fetch('https://bi.dtsgroup.com.tw/api/product/GroupList', {

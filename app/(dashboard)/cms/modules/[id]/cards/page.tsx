@@ -38,7 +38,7 @@ export default async function ModuleCardsPage(props: PageProps) {
         <div className="container mx-auto py-8">
             <div className="flex items-center gap-4 mb-8">
                 <Button variant="outline" size="icon" asChild>
-                    <Link href="/admin/modules" title="返回模組列表">
+                    <Link href="/cms/modules" title="返回模組列表">
                         <ArrowLeft className="h-4 w-4" />
                     </Link>
                 </Button>

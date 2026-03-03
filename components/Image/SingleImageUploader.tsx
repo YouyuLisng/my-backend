@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useCallback } from 'react';
+import { useId, useCallback } from 'react';
 import ImageUploader, { ImageItem } from './ImageUploader';
 import { toast } from "sonner" 
 import { deleteFromVercelBlob } from '@/lib/deleteFromVercelBlob';
@@ -26,16 +26,13 @@ export default function SingleImageUploader({
     error,
 }: SingleImageUploaderProps) {
     const uploaderId = useId();
-    // ❌ 移除 const { toast } = useToast(); 
 
     const handleDelete = useCallback(async (url: string) => {
         try {
             await deleteFromVercelBlob(url);
             onChange(undefined);
-            
             toast.success('圖片已移除');
         } catch (err: any) {
-            
             toast.error('移除失敗', { description: '請重試' });
         }
     }, [onChange]);
@@ -54,15 +51,7 @@ export default function SingleImageUploader({
                     {label}
                 </Label>
             )}
-            
-            {/* 只保留這一層外框 */}
-            <div className={cn(
-                "relative rounded-xl border-2 transition-all duration-200 min-h-[140px] flex flex-col items-center justify-center",
-                !value && !error && "border-dashed border-slate-200 bg-slate-50/30 hover:bg-blue-50/50 hover:border-blue-300",
-                value && "border-solid border-slate-200 bg-white",
-                error && "border-solid border-red-200 bg-red-50/30",
-                "focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-50"
-            )}>
+            <div className="relative w-full transition-all duration-200">
                 
                 <div className="w-full h-full">
                     <ImageUploader
@@ -79,14 +68,18 @@ export default function SingleImageUploader({
                         maxCount={1}
                         requiredSize={requiredSize}
                         showPrimaryButton={false}
-                        className="border-none bg-transparent shadow-none"
+                        className={cn(
+                            "w-full h-full",
+                            error && "border-red-500 bg-red-50/30"
+                        )}
                     />
                 </div>
 
                 {error && (
-                    <div className="absolute inset-0 z-20 bg-red-50/90 flex flex-col items-center justify-center animate-in fade-in">
+                    <div className="absolute inset-0 z-20 bg-red-50/90 flex flex-col items-center justify-center animate-in fade-in rounded-xl border-2 border-red-200">
                         <AlertCircle className="text-red-500 size-6 mb-2" />
                         <button 
+                            type="button"
                             onClick={() => onChange(undefined)}
                             className="flex items-center gap-2 px-3 py-1 bg-white border border-red-200 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50"
                         >
