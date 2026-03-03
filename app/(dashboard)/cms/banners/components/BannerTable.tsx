@@ -208,7 +208,7 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
         if (url.startsWith('http://') || url.startsWith('https://')) {
             return url;
         }
-        const baseUrl = 'https://dts-iota.vercel.app';
+        const baseUrl = 'https://www.dtsgroup.com.tw';
         const path = url.startsWith('/') ? url : `/${url}`;
         return `${baseUrl}${path}`;
     };

@@ -57,16 +57,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
-
             <SidebarContent>
-                {/* 導覽主選單 */}
                 <NavMain items={sidebarItems} />
-                {/* 次要選單 */}
                 <NavSecondary items={navSecondary} className="mt-auto" />
             </SidebarContent>
-
             <SidebarFooter className="border-t border-sidebar-border/50 p-2">
-                {/* ✅ 傳入帶有 role 的使用者資料 */}
                 <NavUser user={currentUser} />
             </SidebarFooter>
         </Sidebar>
