@@ -93,10 +93,8 @@ export default function ProductSectionManager({ form, readOnly = false }: Produc
     const [selectorOpen, setSelectorOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(null);
     
-    // ✅ 使用 Ref 確保初始化邏輯在嚴格模式下也只執行一次
     const initialized = useRef(false);
 
-    // ✅ 修正：嚴格檢查長度，且只在首次掛載時執行
     useEffect(() => {
         if (!initialized.current && fields.length === 0) {
             initialized.current = true;
