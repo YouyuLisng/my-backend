@@ -53,8 +53,6 @@ export default function HotKeywordFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    
-    
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
     const setIsOpen = setControlledOpen ?? setInternalOpen;

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma'; // ✅ 改用你定義的 prisma 實例
+import { prisma } from '@/lib/prisma';
 import { Menu } from '@prisma/client';
 
 // ✅ 擴充 Prisma Menu，加上 children 屬性
