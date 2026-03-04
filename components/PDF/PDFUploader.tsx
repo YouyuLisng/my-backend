@@ -157,9 +157,6 @@ export default function PDFUploader({
         onChange(arrayMove(value, oldIndex, newIndex));
     };
 
-    /* ----------------------------
-        🖼 PDF 列表渲染
-    ---------------------------- */
     return (
         <div className="space-y-4">
             {/* 上傳按鈕 */}
