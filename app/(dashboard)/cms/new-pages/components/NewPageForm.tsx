@@ -116,7 +116,6 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
                 router.refresh();
             } else {
                 toast.error(result.message);
-                // 💡 修正：展開 Zod 的詳細錯誤，這樣您就能看到是不是 mode 欄位在噴錯
                 if (result.errors) {
                     Object.entries(result.errors).forEach(([field, messages]) => {
                         console.error(`驗證失敗 [${field}]:`, messages);
@@ -127,7 +126,6 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
         });
     };
 
-    // 權限判斷：產品部只能使用產品挑選 Tab
     const isProductUser = userRole === Role.PRODUCT;
 
     return (
@@ -166,7 +164,7 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
 
             {/* Tabs 主要內容區 */}
             <Tabs defaultValue={isProductUser ? "products" : "settings"} className="w-full space-y-6">
-                <TabsList className="bg-slate-100/80 h-14 w-full md:w-fit grid grid-cols-3 gap-2 border">
+                <TabsList className="bg-slate-100/80 w-full md:w-fit grid grid-cols-3 gap-2">
                     <TabsTrigger 
                         value="settings" 
                         disabled={isProductUser}
