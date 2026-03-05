@@ -14,6 +14,12 @@ const nextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'travel.dtsgroup.com.tw',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 }

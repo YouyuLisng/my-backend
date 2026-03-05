@@ -12,12 +12,32 @@ export type ActionState = {
     errors?: { [key: string]: string[] };
 };
 
+/**
+ * 內部輔助函式：取得並驗證 Session 使用者
+ */
 async function getSessionUser() {
     const session = await auth();
     if (!session?.user) throw new Error("未授權訪問");
-    // 💡 確保 auth.ts 裡面有把 role 放入 session
     return session.user; 
 }
+
+/**
+ * 內部輔助函式：將 FormData 轉換為結構化資料並進行資料清洗
+ */
+const parsePageFormData = (formData: FormData) => {
+    return {
+        title: formData.get('title') as string,
+        slug: formData.get('slug') as string,
+        mode: (formData.get('mode') as string) || 'GRUPCD', // 修正：從 GRUP 改為 GRUPCD
+        enabled: formData.get('enabled') === 'on' || formData.get('enabled') === 'true',
+        mainImage: (formData.get('mainImage') as string) || null,
+        mobileImage: (formData.get('mobileImage') as string) || null,
+        content: (formData.get('content') as string) || null,
+        seo: formData.get('seo') ? JSON.parse(formData.get('seo') as string) : undefined,
+        tracking: formData.get('tracking') ? JSON.parse(formData.get('tracking') as string) : undefined,
+        products: formData.get('products') ? JSON.parse(formData.get('products') as string) : [],
+    };
+};
 
 export async function getNewPages() {
     try {
@@ -36,26 +56,19 @@ export async function createNewPage(formData: FormData): Promise<ActionState> {
         const user = await getSessionUser();
         
         // 🔒 權限防線：產品部禁止建立
-        if (user.role === 'PRODUCT') {
+        if (user.role === Role.PRODUCT) {
             return { success: false, message: '權限不足：產品部無法建立新活動頁' };
         }
 
-        const rawData = {
-            title: formData.get('title'),
-            slug: formData.get('slug'),
-            mode: formData.get('mode') || 'GRUP',
-            enabled: formData.get('enabled') === 'on',
-            mainImage: formData.get('mainImage') || '',
-            mobileImage: formData.get('mobileImage') || '',
-            content: formData.get('content') || '',
-            seo: formData.get('seo') ? JSON.parse(formData.get('seo') as string) : undefined,
-            tracking: formData.get('tracking') ? JSON.parse(formData.get('tracking') as string) : undefined,
-            products: [], 
-        };
-
+        const rawData = parsePageFormData(formData);
         const validated = NewPageSchema.safeParse(rawData);
+
         if (!validated.success) {
-            return { success: false, message: '驗證失敗', errors: validated.error.flatten().fieldErrors };
+            return { 
+                success: false, 
+                message: '驗證失敗', 
+                errors: validated.error.flatten().fieldErrors 
+            };
         }
 
         await prisma.newPage.create({
@@ -78,8 +91,8 @@ export async function updateNewPage(id: string, formData: FormData): Promise<Act
         const user = await getSessionUser();
         const productsJson = formData.get('products') as string;
         
-        // 🔒 權限防線：產品部只能更新產品列表
-        if (user.role === 'PRODUCT') {
+        // 🔒 權限分流：產品部 (PRODUCT) 只能更新產品列表欄位
+        if (user.role === Role.PRODUCT) {
             await prisma.newPage.update({
                 where: { id },
                 data: {
@@ -87,36 +100,29 @@ export async function updateNewPage(id: string, formData: FormData): Promise<Act
                 }
             });
             revalidatePath('/cms/new-pages');
-            return { success: true, message: '產品勾選清單已儲存' };
+            return { success: true, message: '產品勾選清單已更新' };
         }
 
-        // 🔓 企劃與開發：可以更新所有內容
-        if (user.role === 'PLANNING' || user.role === 'DEV') {
-            const rawData = {
-                title: formData.get('title'),
-                slug: formData.get('slug'),
-                mode: formData.get('mode'),
-                mainImage: formData.get('mainImage'),
-                mobileImage: formData.get('mobileImage'),
-                content: formData.get('content'),
-                enabled: formData.get('enabled') === 'on',
-                seo: formData.get('seo') ? JSON.parse(formData.get('seo') as string) : undefined,
-                tracking: formData.get('tracking') ? JSON.parse(formData.get('tracking') as string) : undefined,
-                products: productsJson ? JSON.parse(productsJson) : undefined,
-            };
-
+        // 🔓 企劃 (PLANNING) 與開發 (DEV)：可以更新所有內容
+        if (user.role === Role.PLANNING || user.role === Role.DEV) {
+            const rawData = parsePageFormData(formData);
             const validated = NewPageSchema.safeParse(rawData);
+
             if (!validated.success) {
-                return { success: false, message: '驗證失敗', errors: validated.error.flatten().fieldErrors };
+                return { 
+                    success: false, 
+                    message: '驗證失敗', 
+                    errors: validated.error.flatten().fieldErrors 
+                };
             }
 
-            await prisma.newPage.update({
+            const updatedPage = await prisma.newPage.update({
                 where: { id },
                 data: validated.data,
             });
 
             revalidatePath('/cms/new-pages');
-            revalidatePath(`/pages/${validated.data.slug}`); 
+            revalidatePath(`/pages/${updatedPage.slug}`); 
             return { success: true, message: '活動頁內容已全面更新' };
         }
 
@@ -128,15 +134,14 @@ export async function updateNewPage(id: string, formData: FormData): Promise<Act
 }
 
 /**
- * ✅ 新增：切換活動頁面發佈狀態 (Enabled Status)
- * 用於表格列表中的 Switch 快速切換
+ * 切換活動頁面發佈狀態 (Enabled Status)
  */
 export async function toggleNewPageStatus(id: string, currentStatus: boolean): Promise<ActionState> {
     try {
         const user = await getSessionUser();
 
         // 🔒 權限防線：產品部禁止切換發佈狀態
-        if (user.role === 'PRODUCT') {
+        if (user.role === Role.PRODUCT) {
             return { success: false, message: '權限不足：產品部無法變更發佈狀態' };
         }
 
@@ -146,7 +151,6 @@ export async function toggleNewPageStatus(id: string, currentStatus: boolean): P
         });
 
         revalidatePath('/cms/new-pages');
-        // 同時重新驗證前台動態路由
         revalidatePath(`/pages/${updatedPage.slug}`);
         
         return { 
@@ -159,15 +163,20 @@ export async function toggleNewPageStatus(id: string, currentStatus: boolean): P
     }
 }
 
+/**
+ * 刪除活動頁面
+ */
 export async function deleteNewPage(id: string): Promise<ActionState> {
     try {
         const user = await getSessionUser();
-        if (user.role === 'PRODUCT') return { success: false, message: '權限不足' };
+        // 🔒 只有 PLANNING 和 DEV 可以刪除
+        if (user.role === Role.PRODUCT) return { success: false, message: '權限不足' };
 
         await prisma.newPage.delete({ where: { id } });
         revalidatePath('/cms/new-pages');
         return { success: true, message: '活動頁已刪除' };
     } catch (error) {
+        console.error('Delete Error:', error);
         return { success: false, message: '刪除失敗' };
     }
 }
