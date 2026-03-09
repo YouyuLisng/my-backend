@@ -68,13 +68,11 @@ export default function PageBasicSettings({ data, onChange }: PageBasicSettingsP
                         label="電腦版主圖 (Main Image)"
                         value={data.mainImage}
                         onChange={(url) => onChange('mainImage', url)}
-                        requiredSize={{ width: 1920, height: 600 }}
                     />
                     <SingleImageUploader 
                         label="手機版主圖 (Mobile Image)"
                         value={data.mobileImage}
                         onChange={(url) => onChange('mobileImage', url)}
-                        requiredSize={{ width: 800, height: 800 }}
                     />
                 </div>
             </div>

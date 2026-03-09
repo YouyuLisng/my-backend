@@ -137,58 +137,6 @@ export default function ProductSelection({ mode, products, onUpdate }: ProductSe
 
     return (
         <div className="space-y-10 mt-8 text-left">
-            {/* --- 區塊 A: 已選上架產品 --- */}
-            <div className="p-6 border-2 border-blue-100 rounded-3xl bg-blue-50/10 shadow-sm">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-bold flex items-center gap-2 text-slate-800">
-                        <CheckCircle2 className="size-6 text-blue-600" /> 已選上架產品 ({selectedItems.length})
-                    </h3>
-                </div>
-                {selectedItems.length === 0 ? (
-                    <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 bg-white">
-                        尚未勾選任何產品
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {selectedItems.map((item) => (
-                            <div key={item.tourId} className="group bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-xl transition-all duration-300 relative animate-in fade-in">
-                                <div className="relative aspect-[16/10]">
-                                    {item.image ? (
-                                        <Image src={item.image} alt={item.name} fill className="object-cover" />
-                                    ) : (
-                                        <div className="flex items-center justify-center h-full bg-slate-100 text-slate-300">
-                                            {item.name === "載入中..." ? <Loader2 className="animate-spin" /> : <ImageIcon size={32} />}
-                                        </div>
-                                    )}
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onUpdate(item.refCode, item.tourId, false);
-                                        }}
-                                        className="absolute top-3 right-3 p-2 bg-black/50 backdrop-blur-md text-white rounded-full hover:bg-red-500 transition-colors z-20 shadow-lg"
-                                    >
-                                        <Trash2 size={16} />
-                                    </button>
-                                </div>
-                                <div className="p-4 flex flex-col h-48">
-                                    <h4 className="font-bold text-slate-800 line-clamp-2 text-md mb-2 leading-tight">{item.name}</h4>
-                                    <div className="flex flex-wrap gap-2 mt-auto mb-4">
-                                        <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-bold rounded">{item.days}日遊</span>
-                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded truncate max-w-[120px] font-mono">{item.tourId}</span>
-                                    </div>
-                                    <div className="flex justify-between items-end pt-2 border-t border-slate-50">
-                                        <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1"><Calendar size={12} /> {item.date}</span>
-                                        <div className="text-right">
-                                            <span className="text-2xl font-black text-orange-600">${item.price?.toLocaleString()}</span>
-                                            <span className="text-xs text-slate-400 ml-1 font-bold">起</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
             {/* --- 區塊 B: 搜尋與挑選 --- */}
             <div className="space-y-6 p-8 border rounded-3xl bg-white shadow-sm border-slate-200">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-6">
@@ -286,6 +234,58 @@ export default function ProductSelection({ mode, products, onUpdate }: ProductSe
                         </div>
                     )}
                 </div>
+            </div>
+             {/* --- 區塊 A: 已選上架產品 --- */}
+            <div className="p-6 border-2 border-blue-100 rounded-3xl bg-blue-50/10 shadow-sm">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-bold flex items-center gap-2 text-slate-800">
+                        <CheckCircle2 className="size-6 text-blue-600" /> 已選上架產品 ({selectedItems.length})
+                    </h3>
+                </div>
+                {selectedItems.length === 0 ? (
+                    <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 bg-white">
+                        尚未勾選任何產品
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {selectedItems.map((item) => (
+                            <div key={item.tourId} className="group bg-white rounded-2xl overflow-hidden border shadow-sm hover:shadow-xl transition-all duration-300 relative animate-in fade-in">
+                                <div className="relative aspect-[16/10]">
+                                    {item.image ? (
+                                        <Image src={item.image} alt={item.name} fill className="object-cover" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full bg-slate-100 text-slate-300">
+                                            {item.name === "載入中..." ? <Loader2 className="animate-spin" /> : <ImageIcon size={32} />}
+                                        </div>
+                                    )}
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onUpdate(item.refCode, item.tourId, false);
+                                        }}
+                                        className="absolute top-3 right-3 p-2 bg-black/50 backdrop-blur-md text-white rounded-full hover:bg-red-500 transition-colors z-20 shadow-lg"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                                <div className="p-4 flex flex-col h-48">
+                                    <h4 className="font-bold text-slate-800 line-clamp-2 text-md mb-2 leading-tight">{item.name}</h4>
+                                    <div className="flex flex-wrap gap-2 mt-auto mb-4">
+                                        <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-[10px] font-bold rounded">{item.days}日遊</span>
+                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded truncate max-w-[120px] font-mono">{item.tourId}</span>
+                                    </div>
+                                    <div className="flex justify-between items-end pt-2 border-t border-slate-50">
+                                        <span className="text-[11px] text-slate-400 font-medium flex items-center gap-1"><Calendar size={12} /> {item.date}</span>
+                                        <div className="text-right">
+                                            <span className="text-2xl font-black text-orange-600">${item.price?.toLocaleString()}</span>
+                                            <span className="text-xs text-slate-400 ml-1 font-bold">起</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
