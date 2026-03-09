@@ -21,7 +21,6 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
 
-    // ✅ 更新：確保初始結構完全符合你的 Prisma Type 定義
     const [formData, setFormData] = useState({
         id: initialData?.id || null,
         title: initialData?.title || '',
@@ -41,7 +40,6 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
             ogImage: '',
             canonical: ''
         },
-        // ✅ 更新：移除 gaId，僅保留 TrackingConfig 定義的欄位
         tracking: initialData?.tracking || { 
             gaEvent: 'ga-click',
             gaEventName: '',
@@ -109,13 +107,10 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
         data.append('title', formData.title);
         data.append('slug', formData.slug);
         data.append('mode', formData.mode);
-        // ✅ 修正：傳送 'true'/'false' 字串給 Server Action 的 parsePageFormData 處理
         data.append('enabled', String(formData.enabled));
         data.append('mainImage', formData.mainImage || '');
         data.append('mobileImage', formData.mobileImage || '');
         data.append('content', formData.content || '');
-        
-        // ✅ 修正：將物件轉為 JSON 字串，與 Server Actions 的 safeJsonParse 對接
         data.append('seo', JSON.stringify(formData.seo));
         data.append('tracking', JSON.stringify(formData.tracking));
         data.append('products', JSON.stringify(formData.products));
@@ -147,7 +142,7 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
     const isProductUser = userRole === Role.PRODUCT;
 
     return (
-        <div className="max-w-[1400px] mx-auto py-8 px-6 space-y-6">
+        <div className="max-w-[1500px] mx-auto py-8 px-6 space-y-6">
             {/* Header 保持不變 */}
             <div className="flex justify-between items-center bg-white p-5 rounded-2xl shadow-sm border">
                 <div className="flex items-center gap-4">
