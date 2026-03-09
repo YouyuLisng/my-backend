@@ -297,3 +297,22 @@ model NewPage {
 
   @@map("new_pages")
 }
+
+model RentalService {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String   @unique
+  description String?
+  
+  images      MarketingImage[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("rental_services")
+}
+
+type MarketingImage {
+  url      String 
+  altText  String?
+  isCover  Boolean  @default(false)
+}
