@@ -139,6 +139,13 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
         });
     };
 
+    const handleReorder = useCallback((newProducts: any[]) => {
+        setFormData(prev => ({
+            ...prev,
+            products: newProducts
+        }));
+    }, []);
+
     const isProductUser = userRole === Role.PRODUCT;
 
     return (
@@ -193,7 +200,7 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
                         disabled={isProductUser}
                         className="font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600"
                     >
-                        <SearchCheck size={18} className="mr-2" /> 3. SEO / 追蹤 {isProductUser && <Lock size={12} className="ml-2" />}
+                        <SearchCheck size={18} className="mr-2" /> 3. SEO {isProductUser && <Lock size={12} className="ml-2" />}
                     </TabsTrigger>
                 </TabsList>
 
@@ -205,7 +212,8 @@ export default function NewPageForm({ initialData, userRole }: NewPageFormProps)
                     <ProductSelection 
                         mode={formData.mode} 
                         products={formData.products} 
-                        onUpdate={handleProductUpdate} 
+                        onUpdate={handleProductUpdate}
+                        onReorder={handleReorder}
                     />
                 </TabsContent>
 

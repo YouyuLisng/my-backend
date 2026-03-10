@@ -7,11 +7,9 @@ import { Role } from '@prisma/client';
 import { Badge } from '@/components/ui/badge';
 
 export default async function NewPagesPage() {
-    // 1. 取得 Session 使用者資訊與權限
     const session = await auth();
     const userRole = (session?.user?.role as Role) || Role.PRODUCT;
 
-    // 2. 從資料庫讀取所有活動頁面
     const pages = await prisma.newPage.findMany({
         orderBy: {
             createdAt: 'desc',

@@ -71,6 +71,8 @@ import {
 } from '../actions/newPage';
 import { useLoadingStore } from '@/stores/useLoadingStore';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // 定義角色權限
 type Role = 'DEV' | 'PLANNING' | 'PRODUCT';
@@ -189,19 +191,19 @@ const PageActionsCell = ({
 // --- 3. 主組件 ---
 interface NewPageDataTableProps {
     data: NewPage[];
-    userRole?: Role; // ✅ 新增：接收使用者角色
+    userRole?: Role;
 }
 
 export function NewPageDataTable({
     data: initialData,
-    userRole = 'PRODUCT', // 預設為最嚴格的產品部權限
+    userRole = 'PRODUCT',
 }: NewPageDataTableProps) {
     const [data, setData] = React.useState(initialData);
     const { show, hide } = useLoadingStore();
 
     // 權限判定
     const isProduct = userRole === 'PRODUCT';
-    const canManagePage = !isProduct; // 是否能建立、刪除或切換狀態
+    const canManagePage = !isProduct;
 
     const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
     const [deleteId, setDeleteId] = React.useState<string | null>(null);
@@ -221,11 +223,11 @@ export function NewPageDataTable({
     const getDisplayUrl = (slug: string) => {
         if (!slug) return '';
         const baseUrl = 'https://www.dtsgroup.com.tw';
-        return `${baseUrl}/pages/${slug}`;
+        return `${baseUrl}/campaigns/${slug}`;
     };
 
     const handleToggleStatus = async (id: string, currentStatus: boolean) => {
-        if (isProduct) return; // 權限攔截
+        if (isProduct) return;
 
         setData((prev) =>
             prev.map((item) =>
@@ -330,7 +332,7 @@ export function NewPageDataTable({
                                     fill
                                     className="object-cover"
                                     sizes="80px"
-                                    unoptimized // 👈 暫時加入，避免網域未設定錯誤
+                                    unoptimized
                                 />
                             ) : (
                                 <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -348,6 +350,37 @@ export function NewPageDataTable({
                         {row.getValue('title')}
                     </span>
                 ),
+            },
+            {
+                accessorKey: 'mode',
+                header: '模式',
+                size: 250,
+                cell: ({ row }) => {
+                    const mode = row.getValue('mode') as string;
+                    
+                    // 根據模式定義樣式與文字
+                    const config: Record<string, { label: string; className: string }> = {
+                        'ITEM': { 
+                            label: '團體模式', 
+                            className: 'bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200' 
+                        },
+                        'GRUPCD': { 
+                            label: '團型模式', 
+                            className: 'bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200' 
+                        }
+                    };
+
+                    const current = config[mode] || { label: mode, className: "" };
+
+                    return (
+                        <Badge 
+                            variant="outline" 
+                            className={cn("px-3 py-1 text-sm font-bold rounded-md shadow-sm", current.className)}
+                        >
+                            {current.label}
+                        </Badge>
+                    );
+                },
             },
             {
                 accessorKey: 'slug',
@@ -377,7 +410,7 @@ export function NewPageDataTable({
                 cell: ({ row }) => (
                     <Switch
                         checked={row.getValue('enabled') as boolean}
-                        disabled={isProduct} // ✅ 產品部不可操作
+                        disabled={isProduct}
                         onCheckedChange={() => handleToggleStatus(row.original.id, row.getValue('enabled'))}
                     />
                 ),
