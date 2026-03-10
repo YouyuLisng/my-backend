@@ -50,7 +50,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
                 const apiRes = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-api-key': '2l*xvFhSOe7@zC46',
+                    },
                     body: JSON.stringify(payload)
                 });
 
