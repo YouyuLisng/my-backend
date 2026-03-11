@@ -27,7 +27,7 @@ async function main() {
   // 3. 定義原始資料 (ID 由資料庫自動產生，不從 JSON 帶入)
   const bannerData: BannerSeedData[] = [
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/bB8uRWq-TOOWdATxMYBoQun2JYXBG5YrKJeH9M.jpeg",
+      imageUrl: "",
       title: "春節大清倉",
       subtitle: null,
       linkText: null,
@@ -40,7 +40,7 @@ async function main() {
       gaLabel: "2026_all_chinesenewyearsale|promotion_redcelebrate_v1|20260120-20260209"
     },
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/RwKeJFx-PPEt2XxdOllA8nrRGpNTZaL2ofEn2R.jpeg",
+      imageUrl: "",
       title: "合掌村點燈",
       subtitle: null,
       linkText: null,
@@ -53,7 +53,7 @@ async function main() {
       gaLabel: "2026_nagoya_gasshozukuri|promotion_gasshozukuri_v1|20260120-20260209"
     },
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/iCehlXp-kEH05i5vfEMIj14g38oZrOsmpjTeks.jpeg",
+      imageUrl: "",
       title: "冬北海道",
       subtitle: null,
       linkText: null,
@@ -66,7 +66,7 @@ async function main() {
       gaLabel: "2026_hokkaido_winterevent|promotion_hokkaidowinterevent_v1|20260120-20260131"
     },
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/xCM2D5P-Kpct7p9YL9SP77NZaDzLxpv3ckEpXl.jpeg",
+      imageUrl: "",
       title: "榮遊東京",
       subtitle: null,
       linkText: null,
@@ -79,7 +79,7 @@ async function main() {
       gaLabel: "2026_tokyo_product|promotion_tokyoproduct_v1|20260120-20260215"
     },
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/qvdasVd-K3Sw2pk2tBbM0cZOD6Fe1teMCVgNlN.jpeg",
+      imageUrl: "",
       title: "沖繩宮古島那霸",
       subtitle: null,
       linkText: null,
@@ -92,7 +92,7 @@ async function main() {
       gaLabel: "2026_okinawa_product|promotion_okinawaproduct_v1|20260120-20260215"
     },
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/M5WIHZY-yjaKwxvaODmpxSy5Np0PXmMtB9bAhS.jpeg",
+      imageUrl: "",
       title: "富士賽車",
       subtitle: null,
       linkText: null,
@@ -105,7 +105,7 @@ async function main() {
       gaLabel: "2026_tokyo_fujispeedway|promotion_fujispeedway_v1|always_on"
     },
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/nL1cjwg-J8T87rYnGR6EZEhrVtJWsmI5e0nErE.jpeg",
+      imageUrl: "",
       title: "清倉頁",
       subtitle: null,
       linkText: null,
@@ -118,7 +118,7 @@ async function main() {
       gaLabel: "2026_jp_clearancesale|promotion_clearancesale_v1|always_on"
     },
     {
-      imageUrl: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/Yf9h0fH-lKqbebsSY4yawbwiM1w36MjPkv88CQ.jpeg",
+      imageUrl: "",
       title: "沖繩租車",
       subtitle: null,
       linkText: null,

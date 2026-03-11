@@ -39,6 +39,7 @@ import {
     Plus,
     ExternalLink,
     ChevronDown,
+    ImagePlus,
 } from 'lucide-react';
 import { Banner } from '@prisma/client';
 
@@ -340,17 +341,28 @@ export function BannerDataTable({ data: initialData }: BannerDataTableProps) {
                 accessorKey: 'imageUrl',
                 header: '圖片',
                 size: 120,
-                cell: ({ row }) => (
-                    <div className="relative h-16 w-28 overflow-hidden rounded-md border bg-muted">
-                        <Image
-                            src={row.getValue('imageUrl')}
-                            alt={row.original.title}
-                            fill
-                            className="object-cover"
-                            sizes="(max-width: 768px) 100px, 150px"
-                        />
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const imageUrl = row.getValue('imageUrl') as string;
+
+                    return (
+                        <div className="relative h-16 w-28 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
+                            {imageUrl ? (
+                                <Image
+                                    src={imageUrl}
+                                    alt={row.original.title || "Banner"}
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100px, 150px"
+                                />
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-muted-foreground/40">
+                                    <ImagePlus className="h-6 w-6 mb-1" />
+                                    <span className="text-[10px] font-medium">無圖片</span>
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
             },
             {
                 accessorKey: 'title',

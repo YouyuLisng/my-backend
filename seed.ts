@@ -4,22 +4,22 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-    const rawPassword = 'a24751243';
+    const rawPassword = 'dts.28838401JP';
     const hashedPassword = await bcrypt.hash(rawPassword, 12);
 
     console.log('🌱 開始執行 Seed 資料初始化...');
 
     const admin = await prisma.user.upsert({
-        where: { email: 'a0979534311@gmail.com' },
+        where: { email: 'marcom@gogojp.com.tw' },
         update: {
             password: hashedPassword,
-            role: 'DEV',
+            role: 'PLANNING',
         },
         create: {
-            email: 'a0979534311@gmail.com',
-            name: '系統管理員',
+            email: 'marcom@gogojp.com.tw',
+            name: '大榮旅遊',
             password: hashedPassword,
-            role: 'DEV',
+            role: 'PLANNING',
         },
     });
 
