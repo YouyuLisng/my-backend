@@ -204,7 +204,6 @@ export default function PDFUploader({
                                     name: pdf.name,
                                     url: pdf.url,
                                     isPrimary: false,
-                                    icon: 'pdf',
                                 }}
                                 showPrimaryButton={false}
                                 onDelete={async () => {

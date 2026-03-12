@@ -22,11 +22,11 @@ async function main() {
     await prisma.ad.deleteMany({});
     console.log('🗑️  已清空舊有 Ad 資料');
 
-    // 3. 準備原始資料 (移除硬編碼 ID，由資料庫自動產生)
+    // 3. 準備原始資料 (image 欄位已清空)
     const adData: AdSeedData[] = [
         {
             title: "全包式滑雪行程",
-            image: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/7eukjyE-TMLADNo0p13zhecURkkj855uzKSqCj.jpeg",
+            image: "",
             href: "https://www.dtsgroup.com.tw/season/ski/?",
             isActive: true,
             sortOrder: 0,
@@ -37,7 +37,7 @@ async function main() {
         },
         {
             title: "九州海景鐵道旅",
-            image: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/TfwxKRO-MchchIBXVsfN8UlvG8hh3th2pUseOB.jpeg",
+            image: "",
             href: "/group/DTS26-FUK02&utm_source=website&utm_medium=display&utm_campaign=kyushu_product_20260112&utm_content=30-50f_abc",
             isActive: true,
             sortOrder: 1,
@@ -48,7 +48,7 @@ async function main() {
         },
         {
             title: "超萌企鵝遊行",
-            image: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/9jAnVwz-MaEzYM3Z9UQH1x3k2OuCOeCR1i1oVM.jpeg",
+            image: "",
             href: "/group/DTS25-SPK151&utm_source=website&utm_medium=display&utm_campaign=hokkaido_product_20260112&utm_content=30-50f_abc",
             isActive: true,
             sortOrder: 2,
@@ -59,7 +59,7 @@ async function main() {
         },
         {
             title: "北海道三大蟹",
-            image: "https://dcxn8ladrevqu64e.public.blob.vercel-storage.com/ncaB0LN-QJErTiLdJcOXC00wUOnntUZLu0JfF4.jpeg",
+            image: "",
             href: "/group/DTS26-SPK041&utm_source=website&utm_medium=display&utm_campaign=hokkaido_product_20260112&utm_content=30-50f_abc",
             isActive: true,
             sortOrder: 3,
@@ -75,7 +75,7 @@ async function main() {
         data: adData
     });
 
-    console.log(`✅ Ad 資料匯入成功！共匯入 ${adData.length} 筆。`);
+    console.log(`✅ Ad 資料匯入成功！共匯入 ${adData.length} 筆（圖片欄位已清空）。`);
 }
 
 main()
