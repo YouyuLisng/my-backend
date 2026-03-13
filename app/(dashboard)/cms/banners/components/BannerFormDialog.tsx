@@ -30,7 +30,6 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from "sonner" 
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
 import { cn } from '@/lib/utils';
@@ -116,11 +115,9 @@ export default function BannerFormDialog({
                 }
 
                 if (result.success) {
-                    
                     toast.success('操作成功', { description: result.message });
                     setIsOpen(false);
                 } else {
-                    
                     toast.error('操作失敗', { description: result.message });
                 }
             } catch (err) {
@@ -129,7 +126,6 @@ export default function BannerFormDialog({
         });
     };
 
-    // 模擬 MUI Outlined Input 樣式的封裝組件
     const MuiFormItem = ({ label, children, required, description }: any) => (
         <FormItem className="space-y-1 relative">
             <FormLabel className={cn(
@@ -150,11 +146,11 @@ export default function BannerFormDialog({
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
             <DialogContent 
-                className="w-[95vw] sm:max-w-[850px] max-h-[90vh] flex flex-col p-0 gap-0 border-none shadow-2xl rounded-xl overflow-hidden"
+                className="w-[95vw] sm:max-w-[900px] h-[90vh] flex flex-col p-0 gap-0 border-none shadow-2xl rounded-xl overflow-hidden bg-white"
                 onInteractOutside={(e) => e.preventDefault()}
             >
-                {/* Header: MUI 風格頁首 */}
-                <DialogHeader className="p-8 pb-6 bg-white">
+                {/* Header: 固定在頂部 */}
+                <DialogHeader className="p-8 pb-4 flex-shrink-0">
                     <DialogTitle className="text-2xl font-bold text-slate-800 tracking-tight">
                         {dialogTitle}
                     </DialogTitle>
@@ -163,139 +159,145 @@ export default function BannerFormDialog({
                     </DialogDescription>
                 </DialogHeader>
                 
-                <ScrollArea className="flex-1 px-8">
-                    <Form {...form}>
-                        <form id="banner-form" onSubmit={form.handleSubmit(onSubmit)} className="pb-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
-                                {/* 左側：基本資訊 */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-1 h-5 bg-blue-600 rounded-full" />
-                                        <h3 className="font-bold text-sm text-slate-700 uppercase tracking-widest">基本資訊</h3>
-                                    </div>
-                                    
-                                    <FormField
-                                        control={form.control}
-                                        name="title"
-                                        render={({ field }) => (
-                                            <MuiFormItem label="標題" required>
-                                                <Input {...field} className="border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all bg-slate-50/30" placeholder="例：夏季精選優惠" disabled={isPending} />
-                                            </MuiFormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="linkUrl"
-                                        render={({ field }) => (
-                                            <MuiFormItem label="連結網址">
-                                                <Input {...field} value={field.value || ''} className="border-slate-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-slate-50/30" placeholder="https://..." disabled={isPending} />
-                                            </MuiFormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="imageUrl"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1 after:content-['*'] after:ml-0.5 after:text-red-500">圖片上傳</FormLabel>
-                                                <FormControl>
-                                                    <div className="mt-1 p-2 border-2 border-slate-200 rounded-xl bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <Form {...form}>
+                    <form 
+                        onSubmit={form.handleSubmit(onSubmit)} 
+                        className="flex flex-col flex-1 min-h-0 overflow-hidden"
+                    >
+                        {/* ✅ 關鍵修正：用原生 div 取代 ScrollArea，加上 min-h-0 */}
+                        <div className="flex-1 min-h-0 overflow-y-auto">
+                            <div className="px-8 py-6 pb-10">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                                    {/* 左側：基本資訊 */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-1 h-5 bg-blue-600 rounded-full" />
+                                            <h3 className="font-bold text-sm text-slate-700 uppercase tracking-widest">基本資訊</h3>
+                                        </div>
+                                        
+                                        <FormField
+                                            control={form.control}
+                                            name="title"
+                                            render={({ field }) => (
+                                                <MuiFormItem label="標題" required>
+                                                    <Input {...field} className="border-slate-200 focus:border-blue-500 transition-all bg-slate-50/30 h-11" placeholder="例：夏季精選優惠" disabled={isPending} />
+                                                </MuiFormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="linkUrl"
+                                            render={({ field }) => (
+                                                <MuiFormItem label="連結網址">
+                                                    <Input {...field} value={field.value || ''} className="border-slate-200 focus:border-blue-500 bg-slate-50/30 h-11" placeholder="https://..." disabled={isPending} />
+                                                </MuiFormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="imageUrl"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="text-xs font-semibold uppercase tracking-wider text-slate-500 ml-1 after:content-['*'] after:ml-0.5 after:text-red-500">圖片上傳</FormLabel>
+                                                    <FormControl>
                                                         <SingleImageUploader value={field.value} onChange={field.onChange} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="isActive"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-200 p-4 bg-white hover:shadow-md transition-shadow">
+                                                    <div className="space-y-0.5">
+                                                        <FormLabel className="text-sm font-bold text-slate-700">啟用狀態</FormLabel>
+                                                        <FormDescription className="text-xs text-slate-500">控制此輪播是否於前台顯示</FormDescription>
                                                     </div>
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={form.control}
-                                        name="isActive"
-                                        render={({ field }) => (
-                                            <FormItem className="flex flex-row items-center justify-between rounded-xl border border-slate-200 p-4 bg-white hover:shadow-md transition-shadow">
-                                                <div className="space-y-0.5">
-                                                    <FormLabel className="text-sm font-bold text-slate-700">啟用狀態</FormLabel>
-                                                    <FormDescription className="text-xs text-slate-500">控制此輪播是否於前台顯示</FormDescription>
-                                                </div>
-                                                <FormControl>
-                                                    <Switch
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        disabled={isPending}
-                                                        className="data-[state=checked]:bg-blue-600"
-                                                    />
-                                                </FormControl>
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                {/* 右側：GA 追蹤 */}
-                                <div className="space-y-6">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <div className="w-1 h-5 bg-orange-500 rounded-full" />
-                                        <h3 className="font-bold text-sm text-slate-700 uppercase tracking-widest">追蹤資訊 (GA)</h3>
+                                                    <FormControl>
+                                                        <Switch
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                            disabled={isPending}
+                                                            className="data-[state=checked]:bg-blue-600"
+                                                        />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
                                     </div>
-                                    <div className="grid gap-5 p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
-                                        <FormField
-                                            control={form.control}
-                                            name="gaEvent"
-                                            render={({ field }) => (
-                                                <MuiFormItem label="事件類型" description="通常填寫 ga-click">
-                                                    <Input {...field} value={field.value || ''} className="bg-white border-slate-200" disabled={isPending} />
-                                                </MuiFormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="gaEventName"
-                                            render={({ field }) => (
-                                                <MuiFormItem label="事件名稱">
-                                                    <Input {...field} value={field.value || ''} className="bg-white border-slate-200" placeholder="例如：home_banner_click" disabled={isPending} />
-                                                </MuiFormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="gaCategory"
-                                            render={({ field }) => (
-                                                <MuiFormItem label="事件類別">
-                                                    <Input {...field} value={field.value || ''} className="bg-white border-slate-200" placeholder="例如：Banner" disabled={isPending} />
-                                                </MuiFormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="gaLabel"
-                                            render={({ field }) => (
-                                                <MuiFormItem label="事件標籤">
-                                                    <Input {...field} value={field.value || ''} className="bg-white border-slate-200" placeholder="例如：夏季促銷" disabled={isPending} />
-                                                </MuiFormItem>
-                                            )}
-                                        />
+
+                                    {/* 右側：GA 追蹤 */}
+                                    <div className="space-y-6">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="w-1 h-5 bg-orange-500 rounded-full" />
+                                            <h3 className="font-bold text-sm text-slate-700 uppercase tracking-widest">追蹤資訊 (GA)</h3>
+                                        </div>
+                                        <div className="grid gap-5 p-6 rounded-2xl border border-slate-100 bg-slate-50/30">
+                                            <FormField
+                                                control={form.control}
+                                                name="gaEvent"
+                                                render={({ field }) => (
+                                                    <MuiFormItem label="事件類型" description="通常填寫 ga-click">
+                                                        <Input {...field} value={field.value || ''} className="bg-white border-slate-200 h-11" disabled={isPending} />
+                                                    </MuiFormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="gaEventName"
+                                                render={({ field }) => (
+                                                    <MuiFormItem label="事件名稱">
+                                                        <Input {...field} value={field.value || ''} className="bg-white border-slate-200 h-11" placeholder="例如：home_banner_click" disabled={isPending} />
+                                                    </MuiFormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="gaCategory"
+                                                render={({ field }) => (
+                                                    <MuiFormItem label="事件類別">
+                                                        <Input {...field} value={field.value || ''} className="bg-white border-slate-200 h-11" placeholder="例如：Banner" disabled={isPending} />
+                                                    </MuiFormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={form.control}
+                                                name="gaLabel"
+                                                render={({ field }) => (
+                                                    <MuiFormItem label="事件標籤">
+                                                        <Input {...field} value={field.value || ''} className="bg-white border-slate-200 h-11" placeholder="例如：夏季促銷" disabled={isPending} />
+                                                    </MuiFormItem>
+                                                )}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </form>
-                    </Form>
-                </ScrollArea>
-                {/* Footer: MUI 按鈕風格 */}
-                <DialogFooter className="p-6 bg-slate-50 border-t border-slate-100 gap-3">
-                    <Button 
-                        variant="ghost" 
-                        onClick={() => setIsOpen(false)} 
-                        disabled={isPending}
-                        className="font-bold text-slate-500 hover:bg-slate-200 transition-colors uppercase tracking-tight"
-                    >
-                        取消
-                    </Button>
-                    <Button 
-                        type="submit" 
-                        form="banner-form" 
-                        disabled={isPending}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 shadow-lg shadow-blue-200 rounded-lg transition-all active:scale-95 uppercase tracking-wide"
-                    >
-                        {isPending ? '處理中...' : (isEdit ? '儲存變更' : '建立輪播')}
-                    </Button>
-                </DialogFooter>
+                        </div>
+
+                        {/* Footer: 固定在底部 */}
+                        <DialogFooter className="p-6 bg-slate-50 border-t border-slate-100 flex-shrink-0 flex flex-row justify-end gap-3 z-10">
+                            <Button 
+                                type="button" 
+                                variant="ghost" 
+                                onClick={() => setIsOpen(false)} 
+                                disabled={isPending}
+                                className="font-bold text-slate-500 hover:bg-slate-200 transition-colors uppercase tracking-tight"
+                            >
+                                取消
+                            </Button>
+                            <Button 
+                                type="submit" 
+                                disabled={isPending}
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 h-11 shadow-lg shadow-blue-200 rounded-lg transition-all active:scale-95"
+                            >
+                                {isPending ? '處理中...' : (isEdit ? '儲存變更' : '建立輪播')}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     );

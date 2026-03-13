@@ -318,10 +318,7 @@ export default function CardFormDialog({
                                                     圖片
                                                 </FormLabel>
                                                 <FormControl>
-                                                    <SingleImageUploader
-                                                        value={field.value || ''}
-                                                        onChange={field.onChange}
-                                                    />
+                                                    <SingleImageUploader value={field.value} onChange={field.onChange} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

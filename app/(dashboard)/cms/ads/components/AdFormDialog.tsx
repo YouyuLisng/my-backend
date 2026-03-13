@@ -205,13 +205,7 @@ export default function AdFormDialog({
                                             <FormItem>
                                                 <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-500 ml-1 after:content-['*'] after:ml-0.5 after:text-red-500">廣告圖片</FormLabel>
                                                 <FormControl>
-                                                    <div className="mt-1">
-                                                        <SingleImageUploader 
-                                                            value={field.value} 
-                                                            onChange={field.onChange}
-                                                            label="" 
-                                                        />
-                                                    </div>
+                                                    <SingleImageUploader value={field.value} onChange={field.onChange} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

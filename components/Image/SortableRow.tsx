@@ -3,7 +3,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useState, useEffect } from 'react';
-import { GripVertical, Trash2, Star } from 'lucide-react';
+import { GripVertical, Trash2, Star, Eye } from 'lucide-react';
 import { BsFileEarmarkPdfFill } from 'react-icons/bs';
 import { cn } from '@/lib/utils';
 
@@ -49,72 +49,72 @@ export default function SortableRow({
             ref={setNodeRef}
             style={style}
             className={cn(
-                'group flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-xl transition-all shadow-sm',
-                isDragging && 'shadow-xl border-blue-400 ring-2 ring-blue-100'
+                'group relative flex flex-col bg-white border border-slate-100 rounded-md transition-all duration-300 shadow-sm overflow-hidden',
+                'min-h-[300px]',
+                isDragging && 'shadow-xl border-blue-400 ring-2 ring-blue-100 scale-[1.02]'
             )}
         >
-            {/* 只有在多圖模式下才顯示拖曳手柄 */}
-            {showPrimaryButton ? (
-                <div
-                    {...attributes}
-                    {...listeners}
-                    className="cursor-grab active:cursor-grabbing p-1 text-slate-300 hover:text-slate-500 transition-colors"
-                >
-                    <GripVertical size={20} />
-                </div>
-            ) : (
-                <div className="w-2" />
-            )}
-
-            {/* 縮圖 */}
-            <div className="relative size-16 flex-shrink-0 bg-slate-50 rounded-lg overflow-hidden border border-slate-100">
+            {/* 圖片顯示區域 */}
+            <div className="relative flex-1 w-full bg-slate-50 flex items-center justify-center p-6">
                 {isPDF ? (
-                    <BsFileEarmarkPdfFill className="size-full p-3 text-red-500" />
+                    <div className="flex flex-col items-center gap-4">
+                        <BsFileEarmarkPdfFill className="size-24 text-red-500" />
+                        <span className="text-sm font-medium text-slate-400">PDF 檔案</span>
+                    </div>
                 ) : (
                     <img
                         src={data.url}
                         alt={data.name}
-                        className="size-full object-cover"
+                        className="max-w-full max-h-full object-contain drop-shadow-md transition-transform duration-500 group-hover:scale-105"
                     />
                 )}
-            </div>
 
-            {/* 資訊 */}
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-700 truncate">
-                    {decodeURIComponent(data.name)}
-                </p>
-            </div>
-
-            {/* 按鈕組 */}
-            <div className="flex items-center gap-1">
-                {showPrimaryButton && !isPDF && (
+                {/* Hover 遮罩與操作按鈕 */}
+                <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[2px] flex items-center justify-center gap-6">
+                    {/* 移除按鈕 (垃圾桶) */}
                     <button
                         type="button"
-                        onClick={onTogglePrimary}
-                        className={cn(
-                            'p-2 rounded-lg transition-colors',
-                            data.isPrimary
-                                ? 'text-yellow-500 bg-yellow-50'
-                                : 'text-slate-300 hover:bg-slate-50 hover:text-yellow-500'
-                        )}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onDelete();
+                        }}
+                        className="p-4 bg-white hover:bg-red-500 hover:text-white text-slate-700 rounded-full shadow-xl transition-all transform translate-y-4 group-hover:translate-y-0"
                     >
-                        <Star
-                            size={18}
-                            fill={data.isPrimary ? 'currentColor' : 'none'}
-                        />
+                        <Trash2 size={20} />
                     </button>
+                    
+                    {/* 主要圖片設定 (星星) */}
+                    {showPrimaryButton && !isPDF && (
+                        <button
+                            type="button"
+                            onClick={onTogglePrimary}
+                            className={cn(
+                                "p-4 bg-white rounded-full shadow-xl transition-all transform translate-y-4 group-hover:translate-y-0 delay-75",
+                                data.isPrimary ? "text-yellow-500" : "text-slate-700 hover:text-yellow-500"
+                            )}
+                        >
+                            <Star size={28} fill={data.isPrimary ? 'currentColor' : 'none'} />
+                        </button>
+                    )}
+                </div>
+                
+                {/* 拖曳手柄 - 浮現在左上角 */}
+                {showPrimaryButton && (
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        className="absolute top-6 left-6 p-2 bg-white/90 rounded-xl shadow-sm cursor-grab active:cursor-grabbing text-slate-400 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                        <GripVertical size={20} />
+                    </div>
                 )}
-                <button
-                    type="button"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        onDelete(); // 直接通知父層
-                    }}
-                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                >
-                    <Trash2 size={18} />
-                </button>
+                
+                {/* 主要圖片標籤 (Badge) */}
+                {data.isPrimary && (
+                    <div className="absolute top-6 right-6 px-3 py-1.5 bg-yellow-400 text-white text-[11px] font-bold rounded-full shadow-sm">
+                        主要圖片
+                    </div>
+                )}
             </div>
         </div>
     );

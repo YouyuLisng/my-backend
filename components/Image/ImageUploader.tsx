@@ -1,6 +1,6 @@
 'use client';
 
-import React, { ChangeEvent, useCallback, useId, useState } from 'react';
+import React, { ChangeEvent, useId, useState, DragEvent, useCallback } from 'react';
 import { toast } from "sonner";
 import {
     DndContext,
@@ -18,7 +18,7 @@ import {
 import SortableRow from './SortableRow';
 import { useLoadingStore } from '@/stores/useLoadingStore';
 import { cn } from '@/lib/utils';
-import { UploadCloud, ImagePlus, Loader2 } from 'lucide-react';
+import { Loader2, Image as ImageIcon } from 'lucide-react';
 
 export interface ImageItem {
     url: string;
@@ -48,6 +48,8 @@ export default function ImageUploader({
 }: Props) {
     const { show, hide } = useLoadingStore();
     const [isUploading, setIsUploading] = useState(false);
+    const [isDragActive, setIsDragActive] = useState(false); // 追蹤拖曳狀態
+    
     const uploaderId = useId();
     const inputId = id || uploaderId;
 
@@ -74,8 +76,8 @@ export default function ImageUploader({
         return { url, name: file.name };
     };
 
-    const handleFileInput = async (e: ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
+    // 核心處理函式：不論拖放或點擊都走這裡
+    const processFiles = useCallback(async (files: File[]) => {
         if (files.length === 0) return;
 
         const limit = maxCount - (maxCount === 1 ? 0 : value.length);
@@ -85,11 +87,10 @@ export default function ImageUploader({
         show();
 
         try {
-            // 並行驗證與上傳
             const uploadPromises = filesToProcess.map(async (file) => {
                 if (file.size > 50 * 1024 * 1024) throw new Error(`${file.name} 超過 50MB`);
                 const validSize = await validateImageSize(file);
-                if (!validSize) throw new Error(`${file.name} 尺寸不符 (${requiredSize?.width}x${requiredSize?.height})`);
+                if (!validSize) throw new Error(`${file.name} 尺寸不符`);
                 return uploadSingleImage(file);
             });
 
@@ -113,8 +114,44 @@ export default function ImageUploader({
         } finally {
             setIsUploading(false);
             hide();
-            e.target.value = '';
         }
+    }, [value, maxCount, onChange, requiredSize, show, hide]);
+
+    // --- 拖放事件處理 ---
+    const onDragOver = (e: DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isUploading) setIsDragActive(true);
+    };
+
+    const onDragLeave = (e: DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+    };
+
+    const onDrop = (e: DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragActive(false);
+        
+        if (isUploading) return;
+
+        const files = Array.from(e.dataTransfer.files);
+        // 過濾僅限圖片
+        const imageFiles = files.filter(file => file.type.startsWith('image/'));
+        
+        if (imageFiles.length > 0) {
+            processFiles(imageFiles);
+        } else if (files.length > 0) {
+            toast.error("請拖放圖片格式的檔案");
+        }
+    };
+
+    const handleFileInput = (e: ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        processFiles(files);
+        e.target.value = ''; 
     };
 
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -129,41 +166,76 @@ export default function ImageUploader({
 
     return (
         <div className={cn("w-full space-y-4", className)}>
-            {/* 上傳區域 */}
             {value.length < maxCount && (
                 <label
                     htmlFor={inputId}
+                    onDragOver={onDragOver}
+                    onDragLeave={onDragLeave}
+                    onDrop={onDrop}
                     className={cn(
-                        "group relative flex flex-col items-center justify-center w-full min-h-[140px]",
-                        "border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50",
-                        "hover:border-blue-400 hover:bg-blue-50/50 transition-all cursor-pointer",
+                        "group relative flex flex-col items-center justify-center w-full min-h-[300px]",
+                        "bg-white rounded-md shadow-sm border border-slate-100",
+                        "hover:shadow-md transition-all duration-300 cursor-pointer",
+                        isDragActive && "border-blue-400 bg-blue-50/50 scale-[1.01] shadow-lg",
                         isUploading && "opacity-60 cursor-not-allowed"
                     )}
                 >
-                    <div className="flex flex-col items-center text-center p-6">
-                        {isUploading ? (
-                            <Loader2 className="h-8 w-8 mb-3 text-blue-500 animate-spin" />
-                        ) : (
-                            <UploadCloud className="h-8 w-8 mb-3 text-slate-400 group-hover:text-blue-500 transition-colors" />
-                        )}
-                        <p className="text-sm font-bold text-slate-700">
-                            {isUploading ? '正在上傳中...' : '點擊或拖放影像至此'}
-                        </p>
-                        <p className="text-[11px] text-slate-400 mt-1">
-                            支援 JPG, PNG (最大 50MB) 
-                            {requiredSize && <span className="text-blue-500 block">需求尺寸: {requiredSize.width}x{requiredSize.height}</span>}
-                        </p>
+                    <div className={cn(
+                        "absolute inset-3 rounded-md border-2 border-dashed flex flex-col items-center justify-center transition-all duration-300",
+                        "border-slate-100 group-hover:border-blue-200 group-hover:bg-blue-50/30",
+                        isDragActive && "border-blue-400 bg-blue-100/20"
+                    )}>
+                        <div className="flex flex-col items-center text-center p-8">
+                            {isUploading ? (
+                                <Loader2 className="h-12 w-12 mb-4 text-blue-500 animate-spin" />
+                            ) : (
+                                <div className="flex flex-col items-center">
+                                    <h3 className={cn(
+                                        "text-xl font-bold transition-colors mb-3",
+                                        isDragActive ? "text-blue-600" : "text-slate-800"
+                                    )}>
+                                        {isDragActive ? "放開以開始上傳" : "將影像拖放到這裡"}
+                                    </h3>
+                                    <p className="text-sm text-slate-400 max-w-[320px] leading-relaxed mb-8">
+                                        支援的檔案類型：JPG、PNG、GIF、WebP。<br />
+                                        檔案大小上限為 50MB
+                                    </p>
+                                    <div className={cn(
+                                        "px-10 py-3 bg-white border border-slate-200 rounded-full text-slate-600 font-semibold text-sm shadow-sm transition-all",
+                                        !isDragActive && "group-hover:border-blue-400 group-hover:text-blue-600 group-hover:shadow"
+                                    )}>
+                                        選擇影像
+                                    </div>
+                                </div>
+                            )}
+
+                            {requiredSize && (
+                                <div className="mt-6 flex items-center gap-1.5 px-3 py-1 bg-blue-50 rounded-md">
+                                    <ImageIcon size={14} className="text-blue-500" />
+                                    <span className="text-[11px] font-bold text-blue-600 uppercase tracking-tight">
+                                        需求尺寸: {requiredSize.width} x {requiredSize.height}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </label>
             )}
 
-            <input id={inputId} type="file" className="hidden" accept="image/*" multiple={maxCount > 1} onChange={handleFileInput} disabled={isUploading} />
+            <input 
+                id={inputId} 
+                type="file" 
+                className="hidden" 
+                accept="image/*" 
+                multiple={maxCount > 1} 
+                onChange={handleFileInput} 
+                disabled={isUploading} 
+            />
 
-            {/* 列表區域 */}
             {value.length > 0 && (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext items={value.map((img) => img.url)} strategy={verticalListSortingStrategy}>
-                        <div className="grid gap-3">
+                        <div className="grid gap-4">
                             {value.map((img) => (
                                 <SortableRow
                                     key={img.url}
