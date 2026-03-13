@@ -37,7 +37,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from "sonner" 
 import SingleImageUploader from '@/components/Image/SingleImageUploader';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -55,8 +54,6 @@ export default function AdFormDialog({
     open: controlledOpen,
     onOpenChange: setControlledOpen
 }: Props) {
-    
-    
     const [internalOpen, setInternalOpen] = useState(false);
     const isOpen = controlledOpen ?? internalOpen;
     const setIsOpen = setControlledOpen ?? setInternalOpen;
